@@ -26,8 +26,8 @@ public class LoggedChoosers extends SubsystemBase {
 
   public LoggedChoosers() {
     addOptions(joystickModeChooser, List.of("Standard"));
-    addOptions(autoRoutineChooser,
-        List.of("Do Nothing", "Test Routine", "Drive Characterization"));
+    addOptions(autoRoutineChooser, List.of("Do Nothing", "Test Routine",
+        "Five Cargo Auto", "Drive Characterization"));
 
     SmartDashboard.putData("Joystick Mode", joystickModeChooser);
     SmartDashboard.putData("Auto Routine", autoRoutineChooser);
