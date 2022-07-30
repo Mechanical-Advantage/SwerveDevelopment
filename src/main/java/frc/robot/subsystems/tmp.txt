@@ -1,3 +1,0 @@
-This folder should contain folders for each subsystem.
-
-Example: https://github.com/Mechanical-Advantage/RobotCode2022/tree/main/src/main/java/frc/robot/subsystems

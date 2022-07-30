@@ -15,6 +15,7 @@ import frc.robot.Constants.Mode;
 import frc.robot.util.Alert;
 import frc.robot.util.GeomUtil;
 import frc.robot.util.LoggedChoosers;
+import frc.robot.util.SparkMAXBurnManager;
 import frc.robot.util.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -40,6 +41,9 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    // Check if flash should be burned
+    SparkMAXBurnManager.update();
+
     // Instantiate active subsystems
     if (Constants.getMode() != Mode.REPLAY) {
       switch (Constants.getRobot()) {
