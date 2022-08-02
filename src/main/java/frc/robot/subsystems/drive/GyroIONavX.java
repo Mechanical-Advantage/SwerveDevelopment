@@ -4,10 +4,13 @@
 
 package frc.robot.subsystems.drive;
 
+import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.wpilibj.SPI;
 import frc.robot.Constants;
 
 public class GyroIONavX implements GyroIO {
-
+  // Defines gyro outside of switch case
+  private AHRS gyro;
   public GyroIONavX() {
 
     // The navX is the standard gyro that we've used on all of our existing robots. It's possible
@@ -17,6 +20,7 @@ public class GyroIONavX implements GyroIO {
     switch (Constants.getRobot()) {
       case ROBOT_SIMBOT:
         // Instantiate the navX - use the 2022 code as an example.
+        gyro = new AHRS(SPI.Port.kMXP);
         break;
       default:
         throw new RuntimeException("Invalid robot for GyroIONavX");
@@ -29,5 +33,8 @@ public class GyroIONavX implements GyroIO {
     // "getAngle" instead of "getYaw" (what's the difference?)
     //
     // Remember to pay attention to the UNITS.
+    inputs.connected = gyro.isConnected();
+    inputs.positionRad = gyro.getAngle() * Math.PI / 180;
+    inputs.velocityRadPerSec = gyro.getRate() * Math.PI / 180;
   }
 }
