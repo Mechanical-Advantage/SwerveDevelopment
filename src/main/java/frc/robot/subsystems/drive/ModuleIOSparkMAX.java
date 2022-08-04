@@ -4,18 +4,49 @@
 
 package frc.robot.subsystems.drive;
 
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
+import edu.wpi.first.wpilibj.Encoder;
 import frc.robot.Constants;
 import frc.robot.util.SparkMAXBurnManager;
 
 public class ModuleIOSparkMAX implements ModuleIO {
+  private final CANSparkMax flSparkMax;
+  private final CANSparkMax frSparkMax;
+  private final CANSparkMax blSparkMax;
+  private final CANSparkMax brSparkMax;
+
+  private Encoder flExternalEncoder;
+  private Encoder frExternalEncoder;
+  private Encoder blExternalEncoder;
+  private Encoder brExternalEncoder;
+
+  private RelativeEncoder flInternalEncoder;
+  private RelativeEncoder frInternalEncoder;
+  private RelativeEncoder blInternalEncoder;
+  private RelativeEncoder brInternalEncoder;
+
+  private boolean isEncoderInverted = false;
+  private boolean hasExternalEncoder = false;
+
+  private boolean flMotorInverted = false;
+  private boolean frMotorInverted = false;
+  private boolean blMotorInverted = false;
+  private boolean brMotorInverted = false;
 
   public ModuleIOSparkMAX(int index) {
+
     switch (Constants.getRobot()) {
       case ROBOT_SIMBOT:
-
+        flSparkMax = new CANSparkMax(1, MotorType.kBrushless);
+        frSparkMax = new CANSparkMax(2, MotorType.kBrushless);
+        blSparkMax = new CANSparkMax(3, MotorType.kBrushless);
+        brSparkMax = new CANSparkMax(4, MotorType.kBrushless);
         // Here, you should set any constants that are the same for every module (i.e. the gear
         // ratios AKA "after encoder reductions").
-
+        final double GEAR_RATIO = 0.0;
         switch (index) { // Each module has its own configuration
           case 0:
             // Instantiate the SparkMAX objects with CAN IDs, plus:
@@ -23,19 +54,48 @@ public class ModuleIOSparkMAX implements ModuleIO {
             // 2) Whether the absolute encoder is inverted
             // 3) The offset rotation for the absolute encoder (see the explanation in
             // updateInputs).
+
+            flExternalEncoder = new Encoder(0, 0); // will have to change digital input channels for
+                                                   // these
+            frExternalEncoder = new Encoder(0, 0);
+            blExternalEncoder = new Encoder(0, 0);
+            brExternalEncoder = new Encoder(0, 0);
+
             break;
           case 1:
             // Same as above, this module will have a different config
+            flExternalEncoder = new Encoder(0, 0); // will have to change digital input channels for
+                                                   // these
+            frExternalEncoder = new Encoder(0, 0);
+            blExternalEncoder = new Encoder(0, 0);
+            brExternalEncoder = new Encoder(0, 0);
+
             break;
           case 2:
             // Same as above, this module will have a different config
+            flExternalEncoder = new Encoder(0, 0); // will have to change digital input channels for
+                                                   // these
+            frExternalEncoder = new Encoder(0, 0);
+            blExternalEncoder = new Encoder(0, 0);
+            brExternalEncoder = new Encoder(0, 0);
+
             break;
           case 3:
             // Same as above, this module will have a different config
+            flExternalEncoder = new Encoder(0, 0);
+            frExternalEncoder = new Encoder(0, 0);
+            blExternalEncoder = new Encoder(0, 0); // will have to change digital input channels for
+                                                   // these
+            brExternalEncoder = new Encoder(0, 0);
+
             break;
         }
         break;
       default:
+        flSparkMax = new CANSparkMax(1, MotorType.kBrushless);
+        frSparkMax = new CANSparkMax(2, MotorType.kBrushless);
+        blSparkMax = new CANSparkMax(3, MotorType.kBrushless);
+        brSparkMax = new CANSparkMax(4, MotorType.kBrushless);
         throw new RuntimeException("Invalid robot for ModuleIOSparkMAX");
     }
 

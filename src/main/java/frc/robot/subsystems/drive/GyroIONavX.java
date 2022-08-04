@@ -5,12 +5,13 @@
 package frc.robot.subsystems.drive;
 
 import com.kauailabs.navx.frc.AHRS;
+
 import edu.wpi.first.wpilibj.SPI;
 import frc.robot.Constants;
 
 public class GyroIONavX implements GyroIO {
-  // Defines gyro outside of switch case
   private AHRS gyro;
+
   public GyroIONavX() {
 
     // The navX is the standard gyro that we've used on all of our existing robots. It's possible
