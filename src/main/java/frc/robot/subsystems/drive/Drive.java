@@ -6,12 +6,19 @@ package frc.robot.subsystems.drive;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
 import frc.robot.subsystems.drive.ModuleIO.ModuleIOInputs;
+import frc.robot.util.TunableNumber;
 
 public class Drive extends SubsystemBase {
   private final GyroIO gyroIO;
@@ -20,6 +27,27 @@ public class Drive extends SubsystemBase {
   private final ModuleIOInputs[] moduleInputs =
       new ModuleIOInputs[] {new ModuleIOInputs(), new ModuleIOInputs(),
           new ModuleIOInputs(), new ModuleIOInputs()};
+
+  private final double maxLinearSpeed;
+  private final double wheelRadius;
+  private final double trackWidthX;
+  private final double trackWidthY;
+
+  private final TunableNumber driveKp = new TunableNumber("Drive/DriveKp");
+  private final TunableNumber driveKd = new TunableNumber("Drive/DriveKd");
+  private final TunableNumber driveKs = new TunableNumber("Drive/DriveKs");
+  private final TunableNumber driveKv = new TunableNumber("Drive/DriveKv");
+
+  private final TunableNumber turnKp = new TunableNumber("Drive/TurnKp");
+  private final TunableNumber turnKd = new TunableNumber("Drive/TurnKd");
+
+  private final SwerveDriveKinematics kinematics;
+  private SimpleMotorFeedforward driveFeedforward;
+  private final PIDController[] driveFeedback = new PIDController[4];
+  private final PIDController[] turnFeedback = new PIDController[4];
+
+  private boolean isFirstCycle = true;
+  private Rotation2d[] encoderBaseline = new Rotation2d[4];
 
   /** Creates a new Drive. */
   public Drive(GyroIO gyroIO, ModuleIO flModuleIO, ModuleIO frModuleIO,
@@ -32,12 +60,46 @@ public class Drive extends SubsystemBase {
 
     switch (Constants.getRobot()) {
       case ROBOT_SIMBOT:
-        // Initialize all of the constants here. The list is on the whiteboard.
-        // You should use TunableNumbers (please ask someone to explain this).
+        maxLinearSpeed = Units.feetToMeters(14.5);
+        wheelRadius = Units.inchesToMeters(2.0);
+        trackWidthX = 0.65;
+        trackWidthY = 0.65;
+
+        driveKp.setDefault(0.0);
+        driveKd.setDefault(0.0);
+        driveKs.setDefault(0.0);
+        driveKv.setDefault(0.0);
+
+        turnKp.setDefault(0.0);
+        turnKd.setDefault(0.0);
         break;
       default:
+        maxLinearSpeed = 0.0;
+        wheelRadius = 0.0;
+        trackWidthX = 0.0;
+        trackWidthY = 0.0;
+
+        driveKp.setDefault(0.0);
+        driveKd.setDefault(0.0);
+        driveKs.setDefault(0.0);
+        driveKv.setDefault(0.0);
+
+        turnKp.setDefault(0.0);
+        turnKd.setDefault(0.0);
         break;
     }
+
+    kinematics = new SwerveDriveKinematics(getModuleTranslations());
+    driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
+    for (int i = 0; i < 4; i++) {
+      driveFeedback[i] = new PIDController(driveKp.get(), 0.0, driveKd.get(),
+          Constants.loopPeriodSecs);
+      turnFeedback[i] = new PIDController(turnKp.get(), 0.0, turnKd.get(),
+          Constants.loopPeriodSecs);
+      turnFeedback[i].enableContinuousInput(-Math.PI, Math.PI);
+    }
+
+    // TODO: Calculate max angular velocity
   }
 
   @Override
@@ -50,15 +112,28 @@ public class Drive extends SubsystemBase {
           moduleInputs[i]);
     }
 
-    // Here are all of the things the code should do here in the periodic method:
-
-    // 1) If the values of the TunableNumbers have changed, update any necessary objects
-    // (kinematics, PID controllers, FF models, etc). You may want to work on the next few steps and
-    // come back to this as you go.
+    // Update objects based on TunableNumbers
+    if (driveKp.hasChanged() || driveKd.hasChanged() || driveKs.hasChanged()
+        || driveKv.hasChanged() || turnKp.hasChanged() || turnKd.hasChanged()) {
+      driveFeedforward =
+          new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
+      for (int i = 0; i < 4; i++) {
+        driveFeedback[i].setP(driveKp.get());
+        driveFeedback[i].setD(driveKd.get());
+        turnFeedback[i].setP(turnKp.get());
+        turnFeedback[i].setD(turnKd.get());
+      }
+    }
 
     // 2) On the first cycle, use the absolute encoders to reset the measured angles. You'll need to
     // record an offset value that's applied to future measurements. All of the calculations in
     // subsequent cycles should use the *relative* encoders.
+    if (isFirstCycle) {
+      for (int i = 0; i < 4; i++) {
+
+      }
+    }
+
 
     // 3) If running in normal closed loop mode (and the robot is enabled), run the kinematics. This
     // should include CALCULATING the module states, DESATURATING the wheel speeds, and OPTIMIZING
@@ -112,6 +187,15 @@ public class Drive extends SubsystemBase {
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     // Reset the stored odometry pose.
+  }
+
+  /** Returns an array of module translations. */
+  public Translation2d[] getModuleTranslations() {
+    return new Translation2d[] {
+        new Translation2d(trackWidthX / 2.0, trackWidthY / 2.0),
+        new Translation2d(trackWidthX / 2.0, -trackWidthY / 2.0),
+        new Translation2d(-trackWidthX / 2.0, trackWidthY / 2.0),
+        new Translation2d(-trackWidthX / 2.0, -trackWidthY / 2.0)};
   }
 
   /** Runs forwards at the commanded voltage. */
