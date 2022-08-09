@@ -6,6 +6,7 @@ package frc.robot.subsystems.drive;
 
 import com.kauailabs.navx.frc.AHRS;
 
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.SPI;
 import frc.robot.Constants;
 
@@ -35,7 +36,7 @@ public class GyroIONavX implements GyroIO {
     //
     // Remember to pay attention to the UNITS.
     inputs.connected = gyro.isConnected();
-    inputs.positionRad = gyro.getAngle() * Math.PI / 180;
-    inputs.velocityRadPerSec = gyro.getRate() * Math.PI / 180;
+    inputs.positionRad = Units.degreesToRadians(gyro.getAngle());
+    inputs.velocityRadPerSec = Units.degreesToRadians(gyro.getRate());
   }
 }
