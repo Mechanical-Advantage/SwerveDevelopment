@@ -49,6 +49,11 @@ public class Drive extends SubsystemBase {
   private boolean isFirstCycle = true;
   private Rotation2d[] encoderBaseline = new Rotation2d[4];
 
+  private Rotation2d[] turnAbsolutePositionRadOffset = new Rotation2d[4];
+  private Rotation2d[] turnRelativePositionRad = new Rotation2d[4];
+
+  private boolean isNormalClosedLoopMode = false;
+  private boolean isEnabled = false;
   /** Creates a new Drive. */
   public Drive(GyroIO gyroIO, ModuleIO flModuleIO, ModuleIO frModuleIO,
       ModuleIO blModuleIO, ModuleIO brModuleIO) {
@@ -129,11 +134,16 @@ public class Drive extends SubsystemBase {
     // record an offset value that's applied to future measurements. All of the calculations in
     // subsequent cycles should use the *relative* encoders.
     if (isFirstCycle) {
+      isFirstCycle = false;
       for (int i = 0; i < 4; i++) {
-
+        turnAbsolutePositionRadOffset[i] =
+            new Rotation2d(moduleInputs[i].turnAbsolutePositionRad);
       }
     }
-
+    for (int i = 0; i < 4; i++) {
+      turnRelativePositionRad[i] =
+          new Rotation2d(moduleInputs[i].turnPositionRad).plus(turnAbsolutePositionRadOffset[i]);
+    }
 
     // 3) If running in normal closed loop mode (and the robot is enabled), run the kinematics. This
     // should include CALCULATING the module states, DESATURATING the wheel speeds, and OPTIMIZING
@@ -145,6 +155,9 @@ public class Drive extends SubsystemBase {
     //
     // Also - remember the UNITS. Once you calculate the module states, convert from meters/sec to
     // radians/sec and run the feedforward and feedback control in radians.
+    if (isNormalClosedLoopMode && isEnabled) {
+      
+    }
 
     // 4) If running in characterization mode (and the robot is enabled), command the requested
     // voltage to the drive motors and run the PID controller to bring the angle to zero degrees.
