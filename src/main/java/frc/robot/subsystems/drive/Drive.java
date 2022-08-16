@@ -11,9 +11,12 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
@@ -21,6 +24,9 @@ import frc.robot.subsystems.drive.ModuleIO.ModuleIOInputs;
 import frc.robot.util.TunableNumber;
 
 public class Drive extends SubsystemBase {
+  private static final double maxCoastVelocityMetersPerSec = 0.05; // Need to be under this to
+                                                                   // switch to coast when disabling
+
   private final GyroIO gyroIO;
   private final GyroIOInputs gyroInputs = new GyroIOInputs();
   private final ModuleIO[] moduleIOs = new ModuleIO[4]; // FL, FR, BL, BR
@@ -29,6 +35,7 @@ public class Drive extends SubsystemBase {
           new ModuleIOInputs(), new ModuleIOInputs()};
 
   private final double maxLinearSpeed;
+  private final double maxAngularSpeed;
   private final double wheelRadius;
   private final double trackWidthX;
   private final double trackWidthY;
@@ -47,13 +54,16 @@ public class Drive extends SubsystemBase {
   private final PIDController[] turnFeedback = new PIDController[4];
 
   private boolean isFirstCycle = true;
-  private Rotation2d[] encoderBaseline = new Rotation2d[4];
-
-  private Rotation2d[] turnAbsolutePositionRadOffset = new Rotation2d[4];
-  private Rotation2d[] turnRelativePositionRad = new Rotation2d[4];
+  private Rotation2d[] turnPositionOffset = new Rotation2d[4];
+  private Rotation2d[] turnPosition = new Rotation2d[4];
+  private Pose2d odometryPose = new Pose2d();
+  private double lastGyroPosRad = 0.0;
+  private boolean brakeMode = false;
 
   private boolean isNormalClosedLoopMode = false;
-  private boolean isEnabled = false;
+  private ChassisSpeeds closedLoopSetpoint = new ChassisSpeeds();
+  private double characterizationVoltage = 0.0;
+
   /** Creates a new Drive. */
   public Drive(GyroIO gyroIO, ModuleIO flModuleIO, ModuleIO frModuleIO,
       ModuleIO blModuleIO, ModuleIO brModuleIO) {
@@ -104,7 +114,11 @@ public class Drive extends SubsystemBase {
       turnFeedback[i].enableContinuousInput(-Math.PI, Math.PI);
     }
 
-    // TODO: Calculate max angular velocity
+    // Calculate max angular speed (TODO: Find a better way to do this)
+    SwerveModuleState[] states =
+        kinematics.toSwerveModuleStates(new ChassisSpeeds(0.0, 0.0, 99999.0));
+    SwerveDriveKinematics.desaturateWheelSpeeds(states, maxLinearSpeed);
+    maxAngularSpeed = kinematics.toChassisSpeeds(states).omegaRadiansPerSecond;
   }
 
   @Override
@@ -136,13 +150,13 @@ public class Drive extends SubsystemBase {
     if (isFirstCycle) {
       isFirstCycle = false;
       for (int i = 0; i < 4; i++) {
-        turnAbsolutePositionRadOffset[i] =
+        turnPositionOffset[i] =
             new Rotation2d(moduleInputs[i].turnAbsolutePositionRad);
       }
     }
     for (int i = 0; i < 4; i++) {
-      turnRelativePositionRad[i] =
-          new Rotation2d(moduleInputs[i].turnPositionRad).plus(turnAbsolutePositionRadOffset[i]);
+      turnPosition[i] = new Rotation2d(moduleInputs[i].turnPositionRad)
+          .plus(turnPositionOffset[i]);
     }
 
     // 3) If running in normal closed loop mode (and the robot is enabled), run the kinematics. This
@@ -155,23 +169,97 @@ public class Drive extends SubsystemBase {
     //
     // Also - remember the UNITS. Once you calculate the module states, convert from meters/sec to
     // radians/sec and run the feedforward and feedback control in radians.
-    if (isNormalClosedLoopMode && isEnabled) {
-      
+    if (isNormalClosedLoopMode && DriverStation.isEnabled()) {
+      SwerveModuleState[] moduleStates =
+          kinematics.toSwerveModuleStates(closedLoopSetpoint);
+      SwerveDriveKinematics.desaturateWheelSpeeds(moduleStates, maxLinearSpeed);
+      for (int i = 0; i < 4; i++) {
+        SwerveModuleState optimizedState =
+            SwerveModuleState.optimize(moduleStates[i], turnPosition[i]);
+        moduleIOs[i].setTurnVoltage(turnFeedback[i].calculate(
+            turnPosition[i].getRadians(), optimizedState.angle.getRadians()));
+
+        double velocityRadPerSec =
+            optimizedState.speedMetersPerSecond / wheelRadius;
+        moduleIOs[i]
+            .setDriveVoltage(driveFeedforward.calculate(velocityRadPerSec)
+                + driveFeedback[i].calculate(
+                    moduleInputs[i].driveVelocityRadPerSec, velocityRadPerSec));
+      }
     }
 
     // 4) If running in characterization mode (and the robot is enabled), command the requested
     // voltage to the drive motors and run the PID controller to bring the angle to zero degrees.
+    if (!isNormalClosedLoopMode && DriverStation.isEnabled()) {
+      for (int i = 0; i < 4; i++) {
+        moduleIOs[i].setTurnVoltage(
+            turnFeedback[i].calculate(turnPosition[i].getRadians(), 0.0));
+        moduleIOs[i].setDriveVoltage(characterizationVoltage);
+      }
+    }
+
+    if (DriverStation.isDisabled()) {
+      for (int i = 0; i < 4; i++) {
+        moduleIOs[i].setTurnVoltage(0.0);
+        moduleIOs[i].setDriveVoltage(0.0);
+      }
+    }
 
     // 5) Update the odometry pose based on the module velocities. If the gyro is connected, use it
     // to find the angle difference. If the gyro is disconnected, estimate the angle differene based
     // on the omega componenet of the ChassisSpeeds object. The link below should give you a good
     // starting point.
     // https://github.com/wpilibsuite/allwpilib/blob/main/wpimath/src/main/java/edu/wpi/first/math/kinematics/SwerveDriveOdometry.java#L100-L106
+    SwerveModuleState[] measuredStates = new SwerveModuleState[4];
+    for (int i = 0; i < 4; i++) {
+      measuredStates[i] = new SwerveModuleState(
+          moduleInputs[i].driveVelocityRadPerSec * wheelRadius,
+          turnPosition[i]);
+    }
+    ChassisSpeeds chassisState = kinematics.toChassisSpeeds(measuredStates);
+    if (gyroInputs.connected) {
+      odometryPose = odometryPose.exp(
+          new Twist2d(chassisState.vxMetersPerSecond * Constants.loopPeriodSecs,
+              chassisState.vyMetersPerSecond * Constants.loopPeriodSecs,
+              gyroInputs.positionRad - lastGyroPosRad));
+    } else {
+      odometryPose = odometryPose.exp(
+          new Twist2d(chassisState.vxMetersPerSecond * Constants.loopPeriodSecs,
+              chassisState.vyMetersPerSecond * Constants.loopPeriodSecs,
+              chassisState.omegaRadiansPerSecond * Constants.loopPeriodSecs));
+    }
+    lastGyroPosRad = gyroInputs.positionRad;
+
 
     // 6) Enable or disable brake mode on the turn and drive motors. They should be in brake model
     // when the robot is enabled, and switch to coast when the robot is disabled *and it comes to a
     // stop*. See the example below from our 2022 code. Also discuss - why is this useful?
     // https://github.com/Mechanical-Advantage/RobotCode2022/blob/main/src/main/java/frc/robot/subsystems/drive/Drive.java#L206-L221
+    if (DriverStation.isEnabled()) {
+      if (!brakeMode) {
+        brakeMode = true;
+        for (int i = 0; i < 4; i++) {
+          moduleIOs[i].setTurnBrakeMode(true);
+          moduleIOs[i].setDriveBrakeMode(true);
+        }
+      }
+    } else {
+      boolean stillMoving = false;
+      for (int i = 0; i < 4; i++) {
+        if (Math.abs(moduleInputs[i].driveVelocityRadPerSec
+            * wheelRadius) > maxCoastVelocityMetersPerSec) {
+          stillMoving = true;
+        }
+      }
+
+      if (brakeMode && !stillMoving) {
+        brakeMode = false;
+        for (int i = 0; i < 4; i++) {
+          moduleIOs[i].setTurnBrakeMode(false);
+          moduleIOs[i].setDriveBrakeMode(false);
+        }
+      }
+    }
   }
 
   /**
@@ -180,9 +268,8 @@ public class Drive extends SubsystemBase {
    * @param speeds Speeds in meters/sec
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    // Don't actually command the modules here, since this method might be called only once at the
-    // start of a command (not periodically). Instead, save the speeds and command the modules in
-    // the periodic method (see the instructions above).
+    isNormalClosedLoopMode = true;
+    closedLoopSetpoint = speeds;
   }
 
   /** Stops the drive. */
@@ -190,16 +277,24 @@ public class Drive extends SubsystemBase {
     runVelocity(new ChassisSpeeds());
   }
 
+  /** Returns the maximum linear speed in meters per sec. */
+  public double getMaxLinearSpeedMetersPerSec() {
+    return maxLinearSpeed;
+  }
+
+  /** Returns the maximum angular speed in radians per sec. */
+  public double getMaxAngularSpeedRadPerSec() {
+    return maxAngularSpeed;
+  }
+
   /** Returns the current odometry pose. */
   public Pose2d getPose() {
-    // Return the stored odometry pose. All of the calculations are in periodic, so this is just a
-    // simple return.
-    return new Pose2d(); // Delete this line when you start working, it just makes VSCode happy.
+    return odometryPose;
   }
 
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
-    // Reset the stored odometry pose.
+    odometryPose = pose;
   }
 
   /** Returns an array of module translations. */
@@ -213,13 +308,16 @@ public class Drive extends SubsystemBase {
 
   /** Runs forwards at the commanded voltage. */
   public void runCharacterizationVolts(double volts) {
-    // Same idea as "runVelocity" - save the voltage and command the modules in periodic.
+    isNormalClosedLoopMode = false;
+    characterizationVoltage = volts;
   }
 
   /** Returns the average drive velocity in radians/sec. */
   public double getCharacterizationVelocity() {
-    // Return the average drive velocity in radians/sec. This will be used during characterization -
-    // the units are radians/sec NOT meters/sec because the feedforward model is in radians/sec.
-    return 0.0; // Delete this line when you start working, it just makes VSCode happy.
+    double driveVelocityAverage = 0.0;
+    for (int i = 0; i < 4; i++) {
+      driveVelocityAverage += moduleInputs[i].driveVelocityRadPerSec;
+    }
+    return driveVelocityAverage / 4.0;
   }
 }
