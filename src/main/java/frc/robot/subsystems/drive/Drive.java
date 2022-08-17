@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.drive;
 
+import java.util.Arrays;
+
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.controller.PIDController;
@@ -114,11 +116,9 @@ public class Drive extends SubsystemBase {
       turnFeedback[i].enableContinuousInput(-Math.PI, Math.PI);
     }
 
-    // Calculate max angular speed (TODO: Find a better way to do this)
-    SwerveModuleState[] states =
-        kinematics.toSwerveModuleStates(new ChassisSpeeds(0.0, 0.0, 99999.0));
-    SwerveDriveKinematics.desaturateWheelSpeeds(states, maxLinearSpeed);
-    maxAngularSpeed = kinematics.toChassisSpeeds(states).omegaRadiansPerSecond;
+    // Calculate max angular speed
+    maxAngularSpeed = maxLinearSpeed / Arrays.stream(getModuleTranslations())
+        .map(translation -> translation.getNorm()).max(Double::compare).get();
   }
 
   @Override
