@@ -25,13 +25,13 @@ public class SwerveVizUtil {
    */
   public static void logModuleStates(String key, SwerveModuleState[] states,
       double maxSpeed) {
-    final double maxLengthPx = 150.0;
+    final double maxLengthPx = 250.0;
     final List<Double> xPoints = new ArrayList<>();
     final List<Double> yPoints = new ArrayList<>();
     final List<Double> centerXs = List.of(1000.0 * (1.0 / 3.0),
         1000.0 * (2.0 / 3.0), 1000.0 * (1.0 / 3.0), 1000.0 * (2.0 / 3.0));
     final List<Double> centerYs = List.of(1000.0 * (1.0 / 3.0),
-        1000.0 * (2.0 / 3.0), 1000.0 * (1.0 / 3.0), 1000.0 * (2.0 / 3.0));
+        1000.0 * (1.0 / 3.0), 1000.0 * (2.0 / 3.0), 1000.0 * (2.0 / 3.0));
 
     for (int i = 0; i < 4; i++) {
       Translation2d scaledTranslation =
