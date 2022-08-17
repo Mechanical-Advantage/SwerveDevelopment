@@ -144,9 +144,7 @@ public class Drive extends SubsystemBase {
       }
     }
 
-    // 2) On the first cycle, use the absolute encoders to reset the measured angles. You'll need to
-    // record an offset value that's applied to future measurements. All of the calculations in
-    // subsequent cycles should use the *relative* encoders.
+    // Update angle measurements (resets from absolute encoders on first cycle)
     if (isFirstCycle) {
       isFirstCycle = false;
       for (int i = 0; i < 4; i++) {
@@ -159,16 +157,7 @@ public class Drive extends SubsystemBase {
           .plus(turnPositionOffset[i]);
     }
 
-    // 3) If running in normal closed loop mode (and the robot is enabled), run the kinematics. This
-    // should include CALCULATING the module states, DESATURATING the wheel speeds, and OPTIMIZING
-    // the module states (the SwerveDriveKinematics and SwerveModuleState classes have methods to do
-    // all of that). Then, calculate the voltage commands for all four modules. The turn command
-    // should use a PIDController (feedback control) and the drive command should use both a
-    // SimpleMotorFeedforward and PIDController (feedforward and feedback control). Check the
-    // documentation for those classes to help you.
-    //
-    // Also - remember the UNITS. Once you calculate the module states, convert from meters/sec to
-    // radians/sec and run the feedforward and feedback control in radians.
+    // In normal mode, run the controllers for turning and driving based on the current setpoint
     if (isNormalClosedLoopMode && DriverStation.isEnabled()) {
       SwerveModuleState[] moduleStates =
           kinematics.toSwerveModuleStates(closedLoopSetpoint);
@@ -188,8 +177,7 @@ public class Drive extends SubsystemBase {
       }
     }
 
-    // 4) If running in characterization mode (and the robot is enabled), command the requested
-    // voltage to the drive motors and run the PID controller to bring the angle to zero degrees.
+    // In characterization mode, drive at the specified voltage (and turn to zero degrees)
     if (!isNormalClosedLoopMode && DriverStation.isEnabled()) {
       for (int i = 0; i < 4; i++) {
         moduleIOs[i].setTurnVoltage(
@@ -198,6 +186,7 @@ public class Drive extends SubsystemBase {
       }
     }
 
+    // Disable output while disabled
     if (DriverStation.isDisabled()) {
       for (int i = 0; i < 4; i++) {
         moduleIOs[i].setTurnVoltage(0.0);
@@ -205,11 +194,7 @@ public class Drive extends SubsystemBase {
       }
     }
 
-    // 5) Update the odometry pose based on the module velocities. If the gyro is connected, use it
-    // to find the angle difference. If the gyro is disconnected, estimate the angle differene based
-    // on the omega componenet of the ChassisSpeeds object. The link below should give you a good
-    // starting point.
-    // https://github.com/wpilibsuite/allwpilib/blob/main/wpimath/src/main/java/edu/wpi/first/math/kinematics/SwerveDriveOdometry.java#L100-L106
+    // Update odometry
     SwerveModuleState[] measuredStates = new SwerveModuleState[4];
     for (int i = 0; i < 4; i++) {
       measuredStates[i] = new SwerveModuleState(
@@ -217,12 +202,12 @@ public class Drive extends SubsystemBase {
           turnPosition[i]);
     }
     ChassisSpeeds chassisState = kinematics.toChassisSpeeds(measuredStates);
-    if (gyroInputs.connected) {
+    if (gyroInputs.connected) { // Use gyro for angular change when connected
       odometryPose = odometryPose.exp(
           new Twist2d(chassisState.vxMetersPerSecond * Constants.loopPeriodSecs,
               chassisState.vyMetersPerSecond * Constants.loopPeriodSecs,
               gyroInputs.positionRad - lastGyroPosRad));
-    } else {
+    } else { // Fall back to using angular velocity (disconnected or sim)
       odometryPose = odometryPose.exp(
           new Twist2d(chassisState.vxMetersPerSecond * Constants.loopPeriodSecs,
               chassisState.vyMetersPerSecond * Constants.loopPeriodSecs,
@@ -231,10 +216,7 @@ public class Drive extends SubsystemBase {
     lastGyroPosRad = gyroInputs.positionRad;
 
 
-    // 6) Enable or disable brake mode on the turn and drive motors. They should be in brake model
-    // when the robot is enabled, and switch to coast when the robot is disabled *and it comes to a
-    // stop*. See the example below from our 2022 code. Also discuss - why is this useful?
-    // https://github.com/Mechanical-Advantage/RobotCode2022/blob/main/src/main/java/frc/robot/subsystems/drive/Drive.java#L206-L221
+    // Enable/disable brake mode
     if (DriverStation.isEnabled()) {
       if (!brakeMode) {
         brakeMode = true;
