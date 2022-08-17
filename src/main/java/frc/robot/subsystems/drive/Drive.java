@@ -56,8 +56,8 @@ public class Drive extends SubsystemBase {
   private final PIDController[] turnFeedback = new PIDController[4];
 
   private boolean isFirstCycle = true;
-  private Rotation2d[] turnPositionOffset = new Rotation2d[4];
-  private Rotation2d[] turnPosition = new Rotation2d[4];
+  private Rotation2d[] turnPositionOffsets = new Rotation2d[4];
+  private Rotation2d[] turnPositions = new Rotation2d[4];
   private Pose2d odometryPose = new Pose2d();
   private double lastGyroPosRad = 0.0;
   private boolean brakeMode = false;
@@ -148,13 +148,13 @@ public class Drive extends SubsystemBase {
     if (isFirstCycle) {
       isFirstCycle = false;
       for (int i = 0; i < 4; i++) {
-        turnPositionOffset[i] =
+        turnPositionOffsets[i] =
             new Rotation2d(moduleInputs[i].turnAbsolutePositionRad);
       }
     }
     for (int i = 0; i < 4; i++) {
-      turnPosition[i] = new Rotation2d(moduleInputs[i].turnPositionRad)
-          .plus(turnPositionOffset[i]);
+      turnPositions[i] = new Rotation2d(moduleInputs[i].turnPositionRad)
+          .plus(turnPositionOffsets[i]);
     }
 
     // In normal mode, run the controllers for turning and driving based on the current setpoint
@@ -164,9 +164,9 @@ public class Drive extends SubsystemBase {
       SwerveDriveKinematics.desaturateWheelSpeeds(moduleStates, maxLinearSpeed);
       for (int i = 0; i < 4; i++) {
         SwerveModuleState optimizedState =
-            SwerveModuleState.optimize(moduleStates[i], turnPosition[i]);
+            SwerveModuleState.optimize(moduleStates[i], turnPositions[i]);
         moduleIOs[i].setTurnVoltage(turnFeedback[i].calculate(
-            turnPosition[i].getRadians(), optimizedState.angle.getRadians()));
+            turnPositions[i].getRadians(), optimizedState.angle.getRadians()));
 
         double velocityRadPerSec =
             optimizedState.speedMetersPerSecond / wheelRadius;
@@ -181,7 +181,7 @@ public class Drive extends SubsystemBase {
     if (!isNormalClosedLoopMode && DriverStation.isEnabled()) {
       for (int i = 0; i < 4; i++) {
         moduleIOs[i].setTurnVoltage(
-            turnFeedback[i].calculate(turnPosition[i].getRadians(), 0.0));
+            turnFeedback[i].calculate(turnPositions[i].getRadians(), 0.0));
         moduleIOs[i].setDriveVoltage(characterizationVoltage);
       }
     }
@@ -199,7 +199,7 @@ public class Drive extends SubsystemBase {
     for (int i = 0; i < 4; i++) {
       measuredStates[i] = new SwerveModuleState(
           moduleInputs[i].driveVelocityRadPerSec * wheelRadius,
-          turnPosition[i]);
+          turnPositions[i]);
     }
     ChassisSpeeds chassisState = kinematics.toChassisSpeeds(measuredStates);
     if (gyroInputs.connected) { // Use gyro for angular change when connected
