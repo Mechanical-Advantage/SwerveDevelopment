@@ -29,7 +29,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 public class RobotContainer {
 
   // Subsystems
-  // private ExampleSubsystem exampleSubsystem;
+  private Drive drive;
 
   // OI objects
   private XboxController controller = new XboxController(0);
@@ -48,7 +48,7 @@ public class RobotContainer {
     if (Constants.getMode() != Mode.REPLAY) {
       switch (Constants.getRobot()) {
         case ROBOT_SIMBOT:
-          // exampleSubsystem = new ExampleSubsystem(new ExampleSubsystemIOReal());
+          exampleSubsystem = new ExampleSubsystem(new ExampleSubsystemIOSim());
           break;
         default:
           break;
@@ -56,8 +56,8 @@ public class RobotContainer {
     }
 
     // Instantiate missing subsystems
-    // exampleSubsystem = exampleSubsystem != null ? exampleSubsystem
-    // : new ExampleSubsystem(new ExampleSubsystemIO() {});
+    exampleSubsystem = exampleSubsystem != null ? exampleSubsystem
+    : new ExampleSubsystem(new ExampleSubsystemIO() {});
 
     // Set up auto routines
     autoRoutineMap.put("Do Nothing",
