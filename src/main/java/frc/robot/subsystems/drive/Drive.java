@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
 import frc.robot.subsystems.drive.ModuleIO.ModuleIOInputs;
+import frc.robot.util.SwerveVizUtil;
 import frc.robot.util.TunableNumber;
 
 public class Drive extends SubsystemBase {
@@ -162,6 +163,8 @@ public class Drive extends SubsystemBase {
       SwerveModuleState[] moduleStates =
           kinematics.toSwerveModuleStates(closedLoopSetpoint);
       SwerveDriveKinematics.desaturateWheelSpeeds(moduleStates, maxLinearSpeed);
+      SwerveVizUtil.logModuleStates("SetpointStates", moduleStates,
+          maxLinearSpeed);
       for (int i = 0; i < 4; i++) {
         SwerveModuleState optimizedState =
             SwerveModuleState.optimize(moduleStates[i], turnPositions[i]);
@@ -214,6 +217,9 @@ public class Drive extends SubsystemBase {
               chassisState.omegaRadiansPerSecond * Constants.loopPeriodSecs));
     }
     lastGyroPosRad = gyroInputs.positionRad;
+    Logger.getInstance().recordOutput("Odometry",
+        new double[] {odometryPose.getX(), odometryPose.getY(),
+            odometryPose.getRotation().getRadians()});
 
 
     // Enable/disable brake mode
@@ -272,6 +278,11 @@ public class Drive extends SubsystemBase {
   /** Returns the current odometry pose. */
   public Pose2d getPose() {
     return odometryPose;
+  }
+
+  /** Returns the current odometry rotation. */
+  public Rotation2d getRotation() {
+    return odometryPose.getRotation();
   }
 
   /** Resets the current odometry pose. */
