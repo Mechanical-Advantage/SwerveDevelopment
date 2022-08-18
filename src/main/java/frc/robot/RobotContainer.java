@@ -12,6 +12,13 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Constants.Mode;
+import frc.robot.commands.DriveWithJoysticks;
+import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.GyroIO;
+import frc.robot.subsystems.drive.GyroIONavX;
+import frc.robot.subsystems.drive.ModuleIO;
+import frc.robot.subsystems.drive.ModuleIOSim;
+import frc.robot.subsystems.drive.ModuleIOSparkMAX;
 import frc.robot.util.Alert;
 import frc.robot.util.GeomUtil;
 import frc.robot.util.LoggedChoosers;
@@ -47,8 +54,14 @@ public class RobotContainer {
     // Instantiate active subsystems
     if (Constants.getMode() != Mode.REPLAY) {
       switch (Constants.getRobot()) {
+        case ROBOT_2022S:
+          drive = new Drive(new GyroIONavX(), new ModuleIOSparkMAX(0),
+              new ModuleIOSparkMAX(1), new ModuleIOSparkMAX(2),
+              new ModuleIOSparkMAX(3));
+          break;
         case ROBOT_SIMBOT:
-          exampleSubsystem = new ExampleSubsystem(new ExampleSubsystemIOSim());
+          drive = new Drive(new GyroIO() {}, new ModuleIOSim(),
+              new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim());
           break;
         default:
           break;
@@ -56,8 +69,9 @@ public class RobotContainer {
     }
 
     // Instantiate missing subsystems
-    exampleSubsystem = exampleSubsystem != null ? exampleSubsystem
-    : new ExampleSubsystem(new ExampleSubsystemIO() {});
+    drive = drive != null ? drive
+        : new Drive(new GyroIO() {}, new ModuleIO() {}, new ModuleIO() {},
+            new ModuleIO() {}, new ModuleIO() {});
 
     // Set up auto routines
     autoRoutineMap.put("Do Nothing",
@@ -78,7 +92,11 @@ public class RobotContainer {
    * ({@link edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a
    * {@link edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
-  private void configureButtonBindings() {}
+  private void configureButtonBindings() {
+    drive.setDefaultCommand(new DriveWithJoysticks(drive,
+        () -> -controller.getLeftY(), () -> -controller.getLeftX(),
+        () -> -controller.getRightX(), () -> false));
+  }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
