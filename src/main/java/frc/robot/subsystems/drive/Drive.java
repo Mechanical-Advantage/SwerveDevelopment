@@ -56,6 +56,7 @@ public class Drive extends SubsystemBase {
   private ChassisSpeeds setpointSpeeds = new ChassisSpeeds();
   private Double characterizationVolts = null;
   private boolean firstCycle = true;
+  private double[] lastModulePositionsRad = new double[] {0.0, 0.0, 0.0, 0.0};
   private double lastYawPositionRad = 0.0;
   private Pose2d pose = new Pose2d();
 
@@ -234,23 +235,24 @@ public class Drive extends SubsystemBase {
     }
 
     // Update odometry
-    SwerveModuleState[] measuredStates = new SwerveModuleState[4];
+    SwerveModuleState[] measuredStatesDiff = new SwerveModuleState[4];
     for (int i = 0; i < 4; i++) {
-      measuredStates[i] = new SwerveModuleState(
-          moduleInputs[i].driveVelocityRadPerSec * wheelRadius.get(),
+      measuredStatesDiff[i] = new SwerveModuleState(
+          (moduleInputs[i].drivePositionRad - lastModulePositionsRad[i])
+              * wheelRadius.get(),
           new Rotation2d(moduleInputs[i].turnPositionRad));
+      lastModulePositionsRad[i] = moduleInputs[i].drivePositionRad;
     }
-    ChassisSpeeds measuredSpeeds = kinematics.toChassisSpeeds(measuredStates);
+    ChassisSpeeds measuredSpeedsDiff =
+        kinematics.toChassisSpeeds(measuredStatesDiff);
     if (gyroInputs.connected) {
-      pose = pose.exp(new Twist2d(
-          measuredSpeeds.vxMetersPerSecond * Constants.loopPeriodSecs,
-          measuredSpeeds.vyMetersPerSecond * Constants.loopPeriodSecs,
+      pose = pose.exp(new Twist2d(measuredSpeedsDiff.vxMetersPerSecond,
+          measuredSpeedsDiff.vyMetersPerSecond,
           lastYawPositionRad - gyroInputs.yawPositionRad));
     } else {
-      pose = pose.exp(new Twist2d(
-          measuredSpeeds.vxMetersPerSecond * Constants.loopPeriodSecs,
-          measuredSpeeds.vyMetersPerSecond * Constants.loopPeriodSecs,
-          measuredSpeeds.omegaRadiansPerSecond * Constants.loopPeriodSecs));
+      pose = pose.exp(new Twist2d(measuredSpeedsDiff.vxMetersPerSecond,
+          measuredSpeedsDiff.vyMetersPerSecond,
+          measuredSpeedsDiff.omegaRadiansPerSecond));
     }
     lastYawPositionRad = gyroInputs.yawPositionRad;
     Logger.getInstance().recordOutput("Odometry/Robot", new double[] {
