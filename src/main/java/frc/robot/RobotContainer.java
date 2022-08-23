@@ -13,6 +13,8 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Constants.Mode;
 import frc.robot.commands.DriveWithJoysticks;
+import frc.robot.commands.FeedForwardCharacterization;
+import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIONavX;
@@ -76,6 +78,12 @@ public class RobotContainer {
     // Set up auto routines
     autoRoutineMap.put("Do Nothing",
         new AutoRoutine(AutoPosition.ORIGIN, new InstantCommand()));
+    autoRoutineMap.put("Drive Characterization",
+        new AutoRoutine(AutoPosition.ORIGIN,
+            new FeedForwardCharacterization(drive, true,
+                new FeedForwardCharacterizationData("drive"),
+                drive::runCharacterizationVolts,
+                drive::getCharacterizationVelocity)));
 
     // Alert if in tuning mode
     if (Constants.tuningMode) {
