@@ -85,8 +85,8 @@ public class Drive extends SubsystemBase {
 
         driveKp.setDefault(0.0);
         driveKd.setDefault(0.0);
-        driveKs.setDefault(0.0);
-        driveKv.setDefault(0.0);
+        driveKs.setDefault(0.00785);
+        driveKv.setDefault(0.13394);
 
         turnKp.setDefault(0.0);
         turnKd.setDefault(0.0);
