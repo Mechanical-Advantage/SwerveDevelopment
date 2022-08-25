@@ -115,7 +115,7 @@ public class RobotContainer {
     String routineString = choosers.getAutoRoutine();
     if (autoRoutineMap.containsKey(routineString)) {
       AutoRoutine routine = autoRoutineMap.get(routineString);
-      // RESET THE ODOMETRY POSE HERE
+      drive.setPose(routine.position.getPose());
       return routine.command;
 
     } else {

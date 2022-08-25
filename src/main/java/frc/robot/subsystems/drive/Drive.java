@@ -60,6 +60,7 @@ public class Drive extends SubsystemBase {
   private Rotation2d[] turnPositionOffsets = new Rotation2d[4];
   private Rotation2d[] turnPositions = new Rotation2d[4];
   private Pose2d odometryPose = new Pose2d();
+  private double[] lastModulePositionsRad = new double[]{0.0, 0.0, 0.0, 0.0};
   private double lastGyroPosRad = 0.0;
   private boolean brakeMode = false;
 
@@ -83,12 +84,12 @@ public class Drive extends SubsystemBase {
         trackWidthX = 0.65;
         trackWidthY = 0.65;
 
-        driveKp.setDefault(0.0);
+        driveKp.setDefault(0.9);
         driveKd.setDefault(0.0);
         driveKs.setDefault(0.00785);
         driveKv.setDefault(0.13394);
 
-        turnKp.setDefault(0.0);
+        turnKp.setDefault(23.0);
         turnKd.setDefault(0.0);
         break;
       default:
@@ -156,6 +157,7 @@ public class Drive extends SubsystemBase {
     for (int i = 0; i < 4; i++) {
       turnPositions[i] = new Rotation2d(moduleInputs[i].turnPositionRad)
           .plus(turnPositionOffsets[i]);
+      Logger.getInstance().recordOutput("TurnPositions/" + Integer.toString(i), turnPositions[i].getRadians());
     }
 
     // In normal mode, run the controllers for turning and driving based on the current setpoint
@@ -170,6 +172,7 @@ public class Drive extends SubsystemBase {
             SwerveModuleState.optimize(moduleStates[i], turnPositions[i]);
         moduleIOs[i].setTurnVoltage(turnFeedback[i].calculate(
             turnPositions[i].getRadians(), optimizedState.angle.getRadians()));
+      
 
         double velocityRadPerSec =
             optimizedState.speedMetersPerSecond / wheelRadius;
@@ -177,6 +180,8 @@ public class Drive extends SubsystemBase {
             .setDriveVoltage(driveFeedforward.calculate(velocityRadPerSec)
                 + driveFeedback[i].calculate(
                     moduleInputs[i].driveVelocityRadPerSec, velocityRadPerSec));
+        Logger.getInstance().recordOutput("DriveSetpoints/" + Integer.toString(i), velocityRadPerSec);
+        Logger.getInstance().recordOutput("TurnSetpoints/" + Integer.toString(i), optimizedState.angle.getRadians());
       }
     }
 
@@ -201,20 +206,22 @@ public class Drive extends SubsystemBase {
     SwerveModuleState[] measuredStates = new SwerveModuleState[4];
     for (int i = 0; i < 4; i++) {
       measuredStates[i] = new SwerveModuleState(
-          moduleInputs[i].driveVelocityRadPerSec * wheelRadius,
+          (moduleInputs[i].drivePositionRad - lastModulePositionsRad[i]) * wheelRadius,
           turnPositions[i]);
+      lastModulePositionsRad[i] = moduleInputs[i].drivePositionRad;
     }
     ChassisSpeeds chassisState = kinematics.toChassisSpeeds(measuredStates);
+    //SwerveVizUtil.logModuleStates("MeasuredStates", measuredStates, maxLinearSpeed);
     if (gyroInputs.connected) { // Use gyro for angular change when connected
       odometryPose = odometryPose.exp(
-          new Twist2d(chassisState.vxMetersPerSecond * Constants.loopPeriodSecs,
-              chassisState.vyMetersPerSecond * Constants.loopPeriodSecs,
+          new Twist2d(chassisState.vxMetersPerSecond,
+              chassisState.vyMetersPerSecond,
               gyroInputs.positionRad - lastGyroPosRad));
     } else { // Fall back to using angular velocity (disconnected or sim)
       odometryPose = odometryPose.exp(
-          new Twist2d(chassisState.vxMetersPerSecond * Constants.loopPeriodSecs,
-              chassisState.vyMetersPerSecond * Constants.loopPeriodSecs,
-              chassisState.omegaRadiansPerSecond * Constants.loopPeriodSecs));
+          new Twist2d(chassisState.vxMetersPerSecond,
+              chassisState.vyMetersPerSecond,
+              chassisState.omegaRadiansPerSecond));
     }
     lastGyroPosRad = gyroInputs.positionRad;
     Logger.getInstance().recordOutput("Odometry",
