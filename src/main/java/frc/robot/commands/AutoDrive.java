@@ -19,6 +19,7 @@ import edu.wpi.first.math.trajectory.constraint.CentripetalAccelerationConstrain
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotState;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.Drive;
@@ -29,7 +30,6 @@ import frc.robot.util.trajectory.Waypoint;
 
 
 public class AutoDrive extends CommandBase {
-  private final double maxVoltage;
   private final double maxVelocityMetersPerSec;
   private final double maxAccelerationMetersPerSec2;
   private final double maxCentripetalAccelerationMetersPerSec2;
@@ -41,60 +41,60 @@ public class AutoDrive extends CommandBase {
 
   private final CustomTrajectoryGenerator customGenerator =
       new CustomTrajectoryGenerator();
-  
+
   private static final Alert generatorAlert = new Alert(
       "Failed to generate all trajectories, check constants.", AlertType.ERROR);
 
   // Use addRequirements() here to declare subsystem dependencies.
   // Select max velocity and acceleration
-  public AutoDrive(Drive drive, List<Waypoint> waypoints, RobotState robotState) {
+  public AutoDrive(Drive drive, List<Waypoint> waypoints,
+      RobotState robotState) {
     addRequirements(drive);
     this.drive = drive;
     this.robotState = robotState;
-  
-  boolean supportedRobot = true;
-  switch(Constants.getRobot()){
+
+    boolean supportedRobot = true;
+    switch (Constants.getRobot()) {
       case ROBOT_SIMBOT:
-        maxVoltage = 10.0;
         maxVelocityMetersPerSec = Units.inchesToMeters(0.0);
         maxAccelerationMetersPerSec2 = Units.inchesToMeters(0.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(0.0);
         break;
       case ROBOT_2022S:
-        maxVoltage = 0.0;
         maxVelocityMetersPerSec = Units.inchesToMeters(0.0);
         maxAccelerationMetersPerSec2 = Units.inchesToMeters(0.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(0.0);
         break;
       default:
         supportedRobot = false;
-        maxVoltage = 10.0;
         maxVelocityMetersPerSec = 0.0;
         maxAccelerationMetersPerSec2 = 0.0;
         maxCentripetalAccelerationMetersPerSec2 = 0.0;
         break;
     }
 
-  // setup trajectory configuration
-  TrajectoryConfig config = new TrajectoryConfig(maxVelocityMetersPerSec, maxAccelerationMetersPerSec2).setKinematics(new SwerveDriveKinematics(drive.getModuleTranslations())).addConstraint(new CentripetalAccelerationConstraint(maxCentripetalAccelerationMetersPerSec2));
+    // setup trajectory configuration
+    TrajectoryConfig config = new TrajectoryConfig(maxVelocityMetersPerSec,
+        maxAccelerationMetersPerSec2)
+            .setKinematics(
+                new SwerveDriveKinematics(drive.getModuleTranslations()))
+            .addConstraint(new CentripetalAccelerationConstraint(
+                maxCentripetalAccelerationMetersPerSec2));
 
-  // Generate trajectory
-  try {
-    customGenerator.generate(config, waypoints);
-  }catch(
-  TrajectoryGenerationException exception)
-  {
-    if (supportedRobot) {
-      generatorAlert.set(true);
-      DriverStation.reportError("Failed to generate trajectory.", true);
+    // Generate trajectory
+    try {
+      customGenerator.generate(config, waypoints);
+    } catch (TrajectoryGenerationException exception) {
+      if (supportedRobot) {
+        generatorAlert.set(true);
+        DriverStation.reportError("Failed to generate trajectory.", true);
       }
     }
   }
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {
-  }
+  public void initialize() {}
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
