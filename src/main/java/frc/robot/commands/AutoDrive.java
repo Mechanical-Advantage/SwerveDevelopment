@@ -8,6 +8,8 @@ import java.util.List;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.controller.HolonomicDriveController;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.Trajectory;
@@ -24,8 +26,11 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.util.Alert;
+import frc.robot.util.TunableNumber;
 import frc.robot.util.Alert.AlertType;
+import frc.robot.util.trajectory.CustomHolonomicDriveController;
 import frc.robot.util.trajectory.CustomTrajectoryGenerator;
+import frc.robot.util.trajectory.RotationSequence;
 import frc.robot.util.trajectory.Waypoint;
 
 
@@ -34,10 +39,23 @@ public class AutoDrive extends CommandBase {
   private final double maxAccelerationMetersPerSec2;
   private final double maxCentripetalAccelerationMetersPerSec2;
 
-  private final RobotState robotState;
+  private final PIDController xController = new PIDController(0.0, 0.0, 0.0);
+  private final PIDController yController = new PIDController(0.0, 0.0, 0.0);
+  private final PIDController thetaController =
+      new PIDController(0.0, 0.0, 0.0);
+
+  private final TunableNumber driveKp = new TunableNumber("Drive/DriveKp");
+  private final TunableNumber driveKd = new TunableNumber("Drive/DriveKd");
+
+  private final TunableNumber turnKp = new TunableNumber("Turn/TurnKp");
+  private final TunableNumber turnKd = new TunableNumber("Turn/TurnKd");
+
+  private final CustomHolonomicDriveController customHolonomicDriveController =
+      new CustomHolonomicDriveController(xController, yController,
+          thetaController);
+
   private final Drive drive;
   private final Timer timer = new Timer();
-
 
   private final CustomTrajectoryGenerator customGenerator =
       new CustomTrajectoryGenerator();
@@ -47,29 +65,45 @@ public class AutoDrive extends CommandBase {
 
   // Use addRequirements() here to declare subsystem dependencies.
   // Select max velocity and acceleration
-  public AutoDrive(Drive drive, List<Waypoint> waypoints,
-      RobotState robotState) {
+  public AutoDrive(Drive drive, List<Waypoint> waypoints) {
     addRequirements(drive);
     this.drive = drive;
-    this.robotState = robotState;
 
     boolean supportedRobot = true;
     switch (Constants.getRobot()) {
       case ROBOT_SIMBOT:
-        maxVelocityMetersPerSec = Units.inchesToMeters(0.0);
-        maxAccelerationMetersPerSec2 = Units.inchesToMeters(0.0);
-        maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(0.0);
+        maxVelocityMetersPerSec = Units.inchesToMeters(150.0);
+        maxAccelerationMetersPerSec2 = Units.inchesToMeters(120.0);
+        maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
+
+        driveKp.setDefault(0.0);
+        driveKd.setDefault(0.0);
+
+        turnKp.setDefault(0.0);
+        turnKd.setDefault(0.0);
         break;
       case ROBOT_2022S:
         maxVelocityMetersPerSec = Units.inchesToMeters(0.0);
         maxAccelerationMetersPerSec2 = Units.inchesToMeters(0.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(0.0);
+
+        driveKp.setDefault(0.0);
+        driveKd.setDefault(0.0);
+
+        turnKp.setDefault(0.0);
+        turnKd.setDefault(0.0);
         break;
       default:
         supportedRobot = false;
         maxVelocityMetersPerSec = 0.0;
         maxAccelerationMetersPerSec2 = 0.0;
         maxCentripetalAccelerationMetersPerSec2 = 0.0;
+
+        driveKp.setDefault(0.0);
+        driveKd.setDefault(0.0);
+
+        turnKp.setDefault(0.0);
+        turnKd.setDefault(0.0);
         break;
     }
 
@@ -94,16 +128,52 @@ public class AutoDrive extends CommandBase {
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {}
+  public void initialize() {
+    timer.reset();
+    timer.start();
+
+    xController.reset();
+    yController.reset();
+    thetaController.reset();
+
+    xController.setD(driveKd.get());
+    xController.setP(driveKp.get());
+
+    yController.setD(driveKd.get());
+    yController.setP(driveKp.get());
+
+    thetaController.setD(driveKd.get());
+    thetaController.setP(driveKp.get());
+  }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    State setpoint = Trajectory.sample(timer.get());
-    Logger.getInstance().recordOutput("Odometry/ProfileSetpoint",
-        new double[] {setpoint.poseMeters.getX(), setpoint.poseMeters.getY(),
-            setpoint.poseMeters.getRotation().getRadians()});
+    Trajectory.State driveState =
+        customGenerator.getDriveTrajectory().sample(timer.get());
+    RotationSequence.State holonomicRotationState =
+        customGenerator.getHolonomicRotationSequence().sample(timer.get());
 
+    ChassisSpeeds nextDriveState = customHolonomicDriveController
+        .calculate(drive.getPose(), driveState, holonomicRotationState);
+    drive.runVelocity(nextDriveState);
+
+    Logger.getInstance().recordOutput("Odometry/ProfileSetpoint",
+        new double[] {driveState.poseMeters.getX(),
+            driveState.poseMeters.getY(),
+            holonomicRotationState.position.getRadians()});
+
+    if (driveKd.hasChanged() || driveKp.hasChanged() || turnKd.hasChanged()
+        || turnKp.hasChanged()) {
+      xController.setD(driveKd.get());
+      xController.setP(driveKp.get());
+
+      yController.setD(driveKd.get());
+      yController.setP(driveKp.get());
+
+      thetaController.setD(driveKd.get());
+      thetaController.setP(driveKp.get());
+    }
   }
 
   // Called once the command ends or is interrupted.

@@ -5,13 +5,17 @@
 package frc.robot;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Constants.Mode;
+import frc.robot.commands.AutoDrive;
 import frc.robot.commands.DriveWithJoysticks;
 import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
@@ -26,6 +30,7 @@ import frc.robot.util.GeomUtil;
 import frc.robot.util.LoggedChoosers;
 import frc.robot.util.SparkMAXBurnManager;
 import frc.robot.util.Alert.AlertType;
+import frc.robot.util.trajectory.Waypoint;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 
@@ -84,6 +89,33 @@ public class RobotContainer {
                 new FeedForwardCharacterizationData("drive"),
                 drive::runCharacterizationVolts,
                 drive::getCharacterizationVelocity)));
+
+    autoRoutineMap.put("Test Routine",
+        new AutoRoutine(AutoPosition.ORIGIN,
+            new AutoDrive(drive, List.of(
+                new Waypoint(new Translation2d(), new Rotation2d(),
+                    new Rotation2d()),
+                new Waypoint(new Translation2d(7, 2),
+                    Rotation2d.fromDegrees(90.0), Rotation2d.fromDegrees(45.0)),
+                new Waypoint(new Translation2d(6, 3),
+                    Rotation2d.fromDegrees(180.0), null),
+                new Waypoint(new Translation2d(5, 2),
+                    Rotation2d.fromDegrees(-90.0), null),
+                new Waypoint(new Translation2d(9, 3),
+                    Rotation2d.fromDegrees(45.0), null),
+                new Waypoint(new Translation2d(9, 4), null,
+                    Rotation2d.fromDegrees(180.0)),
+                new Waypoint(new Translation2d(8, 5), null,
+                    Rotation2d.fromDegrees(-90.0)),
+                new Waypoint(new Translation2d(7, 4.5), null, null),
+                new Waypoint(new Translation2d(5, 4),
+                    Rotation2d.fromDegrees(45.0), Rotation2d.fromDegrees(45.0)),
+                new Waypoint(new Translation2d(4, 6),
+                    Rotation2d.fromDegrees(90.0), Rotation2d.fromDegrees(90.0)),
+                new Waypoint(new Translation2d(3, 8),
+                    Rotation2d.fromDegrees(180.0), null),
+                new Waypoint(new Translation2d(2, 4),
+                    Rotation2d.fromDegrees(-90.0), null)))));
 
     // Alert if in tuning mode
     if (Constants.tuningMode) {
