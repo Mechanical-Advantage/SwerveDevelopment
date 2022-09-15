@@ -21,21 +21,21 @@ import frc.robot.util.trajectory.Waypoint;
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 public class ThreeCargoAuto extends SequentialCommandGroup {
 
-  public static AutoPosition startPosition = AutoPosition.TARMAC_D;
-  public static Pose2d cargoEPosition =
-      FieldConstants.referenceD.transformBy(new Transform2d(
-          new Translation2d(-1.0, -1.0), Rotation2d.fromDegrees(0.0)));
-  public static Pose2d cargoDPosition =
-      FieldConstants.referenceC.transformBy(new Transform2d(
-          new Translation2d(-1.0, null), Rotation2d.fromDegrees(90.0)));
+  public static Pose2d startPosition = AutoPosition.TARMAC_D.getPose();
+  public static Pose2d cargoEPosition = FieldConstants.cargoE.transformBy(
+      new Transform2d(new Translation2d(-0.5, 0), Rotation2d.fromDegrees(0.0)));
+  public static Pose2d cargoDPosition = FieldConstants.cargoD;
 
   /** Creates a new ThreeCargoAuto. */
   public ThreeCargoAuto(Drive drive) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
-    addCommands();
-    new AutoDrive(drive, List.of(
-        new Waypoint(new Translation2d(), new Rotation2d(), new Rotation2d()),
-        new Waypoint(new Translation2d())));
+    addCommands(
+        new AutoDrive(drive,
+            List.of(Waypoint.fromHolonomicPose(startPosition),
+                Waypoint.fromHolonomicPose(cargoEPosition))),
+        new AutoDrive(drive, List.of(Waypoint.fromHolonomicPose(cargoEPosition),
+            Waypoint.fromHolonomicPose(cargoDPosition))));
+
   }
 }

@@ -183,6 +183,7 @@ public class AutoDrive extends CommandBase {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return false;
+    return timer
+        .hasElapsed(customGenerator.getDriveTrajectory().getTotalTimeSeconds());
   }
 }
