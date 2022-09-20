@@ -18,6 +18,7 @@ import frc.robot.Constants.Mode;
 import frc.robot.commands.AutoDrive;
 import frc.robot.commands.DriveWithJoysticks;
 import frc.robot.commands.FeedForwardCharacterization;
+import frc.robot.commands.FiveCargoAuto;
 import frc.robot.commands.ThreeCargoAuto;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.subsystems.drive.Drive;
@@ -93,6 +94,9 @@ public class RobotContainer {
 
     autoRoutineMap.put("Three Cargo",
         new AutoRoutine(AutoPosition.TARMAC_D, new ThreeCargoAuto(drive)));
+
+    autoRoutineMap.put("Five Cargo",
+        new AutoRoutine(AutoPosition.TARMAC_D, new FiveCargoAuto(drive)));
 
     autoRoutineMap.put("Test Routine",
         new AutoRoutine(AutoPosition.ORIGIN,
