@@ -19,8 +19,8 @@ import frc.robot.util.trajectory.Waypoint;
 public class FiveCargoAuto extends SequentialCommandGroup {
 
   public static Pose2d cargoGPosition = FieldConstants.cargoG.transformBy(
-      new Transform2d(new Translation2d(0.75, 0), Rotation2d.fromDegrees(170)));
-  public static Pose2d endPosition = FieldConstants.cargoD;
+      new Transform2d(new Translation2d(0.5, 0), Rotation2d.fromDegrees(175)));
+  public static Pose2d endPosition = calcAimedPose(FieldConstants.cargoD);
 
   /** Creates a new FiveCargoAuto. */
   public FiveCargoAuto(Drive drive) {
