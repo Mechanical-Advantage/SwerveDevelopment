@@ -20,14 +20,22 @@ import frc.robot.util.trajectory.Waypoint;
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 public class SixBallAuto extends SequentialCommandGroup {
-  public static Pose2d centerHangarPosition = new Pose2d(new Translation2d(
-      (FieldConstants.fieldWidth - (FieldConstants.hangarWidth / 2)),
-      FieldConstants.hangarLength / 2), new Rotation2d());
+  public static Translation2d centerHangarPosition =
+      new Translation2d(FieldConstants.hangarLength / 2,
+          FieldConstants.fieldWidth - (FieldConstants.hangarWidth / 2));
 
   public static Pose2d rightBeforeCargoB = FieldConstants.cargoB.transformBy(
       new Transform2d(new Translation2d(0.5, 0), Rotation2d.fromDegrees(0)));
 
-  public static Pose2d endPosition = FieldConstants.cargoB;
+  public static Pose2d aroundCargoB =
+      FieldConstants.cargoB.transformBy(new Transform2d(
+          new Translation2d(0.0, 0.75), Rotation2d.fromDegrees(180.0)));
+
+  public static Pose2d frontCargoB =
+      calcAimedPose(FieldConstants.cargoB.transformBy(new Transform2d(
+          new Translation2d(-1.15, 0.0), Rotation2d.fromDegrees(0.0))));
+
+  public static Pose2d endPosition = calcAimedPose(FieldConstants.cargoB);
 
   /** Creates a new SixBallAuto. */
   public SixBallAuto(Drive drive) {
@@ -38,18 +46,16 @@ public class SixBallAuto extends SequentialCommandGroup {
         new AutoDrive(drive,
             List.of(Waypoint.fromHolonomicPose(ThreeCargoAuto.cargoDPosition),
                 Waypoint.fromHolonomicPose(FiveCargoAuto.cargoGPosition))),
-        // cargoG to Terminal
-        new AutoDrive(drive,
-            List.of(Waypoint.fromHolonomicPose(FiveCargoAuto.cargoGPosition),
-                Waypoint.fromHolonomicPose(centerHangarPosition))),
         // cargoG mario kart around hangar to right before cargoB
         new AutoDrive(drive,
             List.of(Waypoint.fromHolonomicPose(FiveCargoAuto.cargoGPosition),
-                Waypoint.fromHolonomicPose(centerHangarPosition),
-                Waypoint.fromHolonomicPose(rightBeforeCargoB))),
+                // ADD HANGAR WAYPOINT
+                new Waypoint(centerHangarPosition),
+                Waypoint.fromDifferentialPose(aroundCargoB),
+                Waypoint.fromHolonomicPose(frontCargoB))),
         new AutoDrive(drive,
             // right before cargoB to cargoB
-            List.of(Waypoint.fromHolonomicPose(rightBeforeCargoB),
+            List.of(Waypoint.fromHolonomicPose(frontCargoB),
                 Waypoint.fromHolonomicPose(endPosition))));
 
   }
