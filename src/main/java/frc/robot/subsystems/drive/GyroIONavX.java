@@ -20,7 +20,7 @@ public class GyroIONavX implements GyroIO {
     // backup (and because it's good practice).
 
     switch (Constants.getRobot()) {
-      case ROBOT_SIMBOT:
+      case ROBOT_2022S:
         // Instantiate the navX - use the 2022 code as an example.
         gyro = new AHRS(SPI.Port.kMXP);
         break;
