@@ -21,7 +21,7 @@ public class GyroIOPigeon2 implements GyroIO {
         gyro = new Pigeon2(0);
         break;
       default:
-        throw new RuntimeException("Invalid Robot Type");
+        throw new RuntimeException("Invalid robot for GyroIOPigeon2");
     }
   }
 
