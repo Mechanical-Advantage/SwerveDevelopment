@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.Mode;
 import frc.robot.commands.AutoDrive;
 import frc.robot.commands.DriveWithJoysticks;
@@ -29,6 +30,7 @@ import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSparkMAX;
 import frc.robot.util.Alert;
+import frc.robot.util.DisabledInstantCommand;
 import frc.robot.util.GeomUtil;
 import frc.robot.util.LoggedChoosers;
 import frc.robot.util.SparkMAXBurnManager;
@@ -36,6 +38,7 @@ import frc.robot.util.Alert.AlertType;
 import frc.robot.util.trajectory.Waypoint;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -50,6 +53,7 @@ public class RobotContainer {
 
   // OI objects
   private XboxController controller = new XboxController(0);
+  private boolean isFieldRelative = false;
 
   // Choosers
   private final LoggedChoosers choosers = new LoggedChoosers();
@@ -144,9 +148,23 @@ public class RobotContainer {
    * {@link edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
+    new Trigger(controller::getStartButton)
+        .or(new Trigger(controller::getBackButton))
+        .whenActive(new DisabledInstantCommand(() -> {
+          isFieldRelative = !isFieldRelative;
+          SmartDashboard.putBoolean("Field Relative", isFieldRelative);
+        }));
+    SmartDashboard.putBoolean("Field Relative", isFieldRelative);
     drive.setDefaultCommand(new DriveWithJoysticks(drive,
         () -> -controller.getLeftY(), () -> -controller.getLeftX(),
-        () -> -controller.getRightX(), () -> false));
+        () -> -controller.getRightX(), () -> !isFieldRelative));
+    new Trigger(controller::getLeftBumper)
+        .or(new Trigger(controller::getRightBumper))
+        .whenActive(new DisabledInstantCommand(() -> {
+          System.out.println("Odometry rotation was reset to zero");
+          drive.setPose(
+              new Pose2d(drive.getPose().getTranslation(), new Rotation2d()));
+        }, drive));
   }
 
   /**
