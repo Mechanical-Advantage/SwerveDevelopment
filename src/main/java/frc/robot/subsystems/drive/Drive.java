@@ -78,6 +78,20 @@ public class Drive extends SubsystemBase {
     moduleIOs[3] = brModuleIO;
 
     switch (Constants.getRobot()) {
+      case ROBOT_2022S:
+        maxLinearSpeed = Units.feetToMeters(14.5);
+        wheelRadius = Units.inchesToMeters(2.0);
+        trackWidthX = Units.inchesToMeters(25.0);
+        trackWidthY = Units.inchesToMeters(24.0);
+
+        driveKp.setDefault(0.0);
+        driveKd.setDefault(0.0);
+        driveKs.setDefault(0.0);
+        driveKv.setDefault(0.0);
+
+        turnKp.setDefault(0.0);
+        turnKd.setDefault(0.0);
+        break;
       case ROBOT_SIMBOT:
         maxLinearSpeed = Units.feetToMeters(14.5);
         wheelRadius = Units.inchesToMeters(2.0);
