@@ -8,7 +8,6 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.CANSparkMaxLowLevel.PeriodicFrame;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
@@ -30,7 +29,7 @@ public class ModuleIOSparkMAX implements ModuleIO {
   private final double turnAfterEncoderReduction = 150.0 / 7.0;
 
   private final boolean isTurnMotorInverted = true;
-  private final boolean isAbsoluteEncoderInverted;
+  private final boolean isAbsoluteEncoderInverted = false;
   private final Rotation2d absoluteEncoderOffset;
 
   public ModuleIOSparkMAX(int index) {
@@ -41,28 +40,24 @@ public class ModuleIOSparkMAX implements ModuleIO {
             driveSparkMax = new CANSparkMax(15, MotorType.kBrushless);
             turnSparkMax = new CANSparkMax(11, MotorType.kBrushless);
             turnAbsoluteEncoder = new AnalogInput(0);
-            isAbsoluteEncoderInverted = false;
             absoluteEncoderOffset = new Rotation2d(-0.036);
             break;
           case 1:
             driveSparkMax = new CANSparkMax(12, MotorType.kBrushless);
             turnSparkMax = new CANSparkMax(9, MotorType.kBrushless);
             turnAbsoluteEncoder = new AnalogInput(1);
-            isAbsoluteEncoderInverted = false;
             absoluteEncoderOffset = new Rotation2d(1.0185);
             break;
           case 2:
             driveSparkMax = new CANSparkMax(14, MotorType.kBrushless);
             turnSparkMax = new CANSparkMax(10, MotorType.kBrushless);
             turnAbsoluteEncoder = new AnalogInput(2);
-            isAbsoluteEncoderInverted = false;
             absoluteEncoderOffset = new Rotation2d(1.0695);
             break;
           case 3:
             driveSparkMax = new CANSparkMax(13, MotorType.kBrushless);
             turnSparkMax = new CANSparkMax(8, MotorType.kBrushless);
             turnAbsoluteEncoder = new AnalogInput(3);
-            isAbsoluteEncoderInverted = false;
             absoluteEncoderOffset = new Rotation2d(0.7465);
             break;
           default:
@@ -90,8 +85,6 @@ public class ModuleIOSparkMAX implements ModuleIO {
     turnRelativeEncoder = turnSparkMax.getEncoder();
     driveRelativeEncoder.setPosition(0.0);
     turnRelativeEncoder.setPosition(0.0);
-
-    turnSparkMax.setPeriodicFramePeriod(PeriodicFrame.kStatus3, 20);
 
     driveSparkMax.setCANTimeout(0);
     turnSparkMax.setCANTimeout(0);
