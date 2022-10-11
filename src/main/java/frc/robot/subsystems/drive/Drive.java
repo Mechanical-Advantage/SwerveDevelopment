@@ -56,9 +56,6 @@ public class Drive extends SubsystemBase {
   private final PIDController[] driveFeedback = new PIDController[4];
   private final PIDController[] turnFeedback = new PIDController[4];
 
-  private boolean isFirstCycle = true;
-  private Rotation2d[] turnPositionOffsets = new Rotation2d[4];
-  private Rotation2d[] turnPositions = new Rotation2d[4];
   private Pose2d odometryPose = new Pose2d();
   private double[] lastModulePositionsRad = new double[] {0.0, 0.0, 0.0, 0.0};
   private double lastGyroPosRad = 0.0;
@@ -86,10 +83,10 @@ public class Drive extends SubsystemBase {
 
         driveKp.setDefault(0.0);
         driveKd.setDefault(0.0);
-        driveKs.setDefault(0.0);
-        driveKv.setDefault(0.0);
+        driveKs.setDefault(0.12763);
+        driveKv.setDefault(0.13453);
 
-        turnKp.setDefault(0.0);
+        turnKp.setDefault(10.0);
         turnKd.setDefault(0.0);
         break;
       case ROBOT_SIMBOT:
@@ -160,19 +157,11 @@ public class Drive extends SubsystemBase {
       }
     }
 
-    // Update angle measurements (resets from absolute encoders on first cycle)
-    if (isFirstCycle) {
-      isFirstCycle = false;
-      for (int i = 0; i < 4; i++) {
-        turnPositionOffsets[i] =
-            new Rotation2d(moduleInputs[i].turnAbsolutePositionRad);
-      }
-    }
+    // Update angle measurements
+    Rotation2d[] turnPositions = new Rotation2d[4];
     for (int i = 0; i < 4; i++) {
-      turnPositions[i] = new Rotation2d(moduleInputs[i].turnPositionRad)
-          .plus(turnPositionOffsets[i]);
-      Logger.getInstance().recordOutput("TurnPositions/" + Integer.toString(i),
-          turnPositions[i].getRadians());
+      turnPositions[i] =
+          new Rotation2d(moduleInputs[i].turnAbsolutePositionRad);
     }
 
     // In normal mode, run the controllers for turning and driving based on the current setpoint
@@ -187,7 +176,6 @@ public class Drive extends SubsystemBase {
             SwerveModuleState.optimize(moduleStates[i], turnPositions[i]);
         moduleIOs[i].setTurnVoltage(turnFeedback[i].calculate(
             turnPositions[i].getRadians(), optimizedState.angle.getRadians()));
-
 
         double velocityRadPerSec =
             optimizedState.speedMetersPerSecond / wheelRadius;

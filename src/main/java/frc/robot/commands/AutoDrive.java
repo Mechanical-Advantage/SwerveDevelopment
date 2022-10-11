@@ -44,11 +44,11 @@ public class AutoDrive extends CommandBase {
   private final PIDController thetaController =
       new PIDController(0.0, 0.0, 0.0);
 
-  private final TunableNumber driveKp = new TunableNumber("Drive/DriveKp");
-  private final TunableNumber driveKd = new TunableNumber("Drive/DriveKd");
+  private final TunableNumber driveKp = new TunableNumber("AutoDrive/DriveKp");
+  private final TunableNumber driveKd = new TunableNumber("AutoDrive/DriveKd");
 
-  private final TunableNumber turnKp = new TunableNumber("Turn/TurnKp");
-  private final TunableNumber turnKd = new TunableNumber("Turn/TurnKd");
+  private final TunableNumber turnKp = new TunableNumber("AutoDrive/TurnKp");
+  private final TunableNumber turnKd = new TunableNumber("AutoDrive/TurnKd");
 
   private final CustomHolonomicDriveController customHolonomicDriveController =
       new CustomHolonomicDriveController(xController, yController,
@@ -71,7 +71,7 @@ public class AutoDrive extends CommandBase {
 
     boolean supportedRobot = true;
     switch (Constants.getRobot()) {
-      case ROBOT_SIMBOT:
+      case ROBOT_2022S:
         maxVelocityMetersPerSec = Units.inchesToMeters(150.0);
         maxAccelerationMetersPerSec2 = Units.inchesToMeters(120.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
@@ -82,10 +82,10 @@ public class AutoDrive extends CommandBase {
         turnKp.setDefault(0.0);
         turnKd.setDefault(0.0);
         break;
-      case ROBOT_2022S:
-        maxVelocityMetersPerSec = Units.inchesToMeters(0.0);
-        maxAccelerationMetersPerSec2 = Units.inchesToMeters(0.0);
-        maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(0.0);
+      case ROBOT_SIMBOT:
+        maxVelocityMetersPerSec = Units.inchesToMeters(150.0);
+        maxAccelerationMetersPerSec2 = Units.inchesToMeters(120.0);
+        maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
 
         driveKp.setDefault(0.0);
         driveKd.setDefault(0.0);
