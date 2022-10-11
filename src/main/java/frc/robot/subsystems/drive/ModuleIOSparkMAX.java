@@ -36,7 +36,7 @@ public class ModuleIOSparkMAX implements ModuleIO {
 
   public ModuleIOSparkMAX(int index) {
     switch (Constants.getRobot()) {
-      case ROBOT_SIMBOT:
+      case ROBOT_2022S:
         switch (index) {
           case 0:
             driveSparkMax = new CANSparkMax(1, MotorType.kBrushless);
