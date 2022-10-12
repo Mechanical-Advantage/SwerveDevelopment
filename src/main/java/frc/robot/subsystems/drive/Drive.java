@@ -4,7 +4,9 @@
 
 package frc.robot.subsystems.drive;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -23,7 +25,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
 import frc.robot.subsystems.drive.ModuleIO.ModuleIOInputs;
-import frc.robot.util.SwerveVizUtil;
 import frc.robot.util.TunableNumber;
 
 public class Drive extends SubsystemBase {
@@ -166,29 +167,44 @@ public class Drive extends SubsystemBase {
 
     // In normal mode, run the controllers for turning and driving based on the current setpoint
     if (isNormalClosedLoopMode && DriverStation.isEnabled()) {
-      SwerveModuleState[] moduleStates =
+      SwerveModuleState[] setpointStates =
           kinematics.toSwerveModuleStates(closedLoopSetpoint);
-      SwerveDriveKinematics.desaturateWheelSpeeds(moduleStates, maxLinearSpeed);
-      SwerveVizUtil.logModuleStates("SetpointStates", moduleStates,
+      SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates,
           maxLinearSpeed);
-      for (int i = 0; i < 4; i++) {
-        SwerveModuleState optimizedState =
-            SwerveModuleState.optimize(moduleStates[i], turnPositions[i]);
-        moduleIOs[i].setTurnVoltage(turnFeedback[i].calculate(
-            turnPositions[i].getRadians(), optimizedState.angle.getRadians()));
 
+      SwerveModuleState[] setpointStatesOptimized =
+          new SwerveModuleState[] {null, null, null, null};
+      for (int i = 0; i < 4; i++) {
+        // Run turn controller
+        setpointStatesOptimized[i] =
+            SwerveModuleState.optimize(setpointStates[i], turnPositions[i]);
+        moduleIOs[i].setTurnVoltage(
+            turnFeedback[i].calculate(turnPositions[i].getRadians(),
+                setpointStatesOptimized[i].angle.getRadians()));
+
+        // Update velocity based on turn error
+        setpointStatesOptimized[i].speedMetersPerSecond *=
+            Math.cos(turnFeedback[i].getPositionError());
+
+        // Run drive controller
         double velocityRadPerSec =
-            optimizedState.speedMetersPerSecond / wheelRadius;
+            setpointStatesOptimized[i].speedMetersPerSecond / wheelRadius;
         moduleIOs[i]
             .setDriveVoltage(driveFeedforward.calculate(velocityRadPerSec)
                 + driveFeedback[i].calculate(
                     moduleInputs[i].driveVelocityRadPerSec, velocityRadPerSec));
+
+        // Log individual setpoints
         Logger.getInstance().recordOutput(
-            "DriveSetpoints/" + Integer.toString(i), velocityRadPerSec);
+            "SwerveDriveSetpoints/" + Integer.toString(i), velocityRadPerSec);
         Logger.getInstance().recordOutput(
-            "TurnSetpoints/" + Integer.toString(i),
-            optimizedState.angle.getRadians());
+            "SwerveTurnSetpoints/" + Integer.toString(i),
+            setpointStatesOptimized[i].angle.getRadians());
       }
+
+      // Log all module setpoints
+      logModuleStates("SwerveModuleStates/Setpoints", setpointStates);
+      logModuleStates("SwerveModuleStates/SetpointsOptimized", setpointStates);
     }
 
     // In characterization mode, drive at the specified voltage (and turn to zero degrees)
@@ -218,7 +234,6 @@ public class Drive extends SubsystemBase {
       lastModulePositionsRad[i] = moduleInputs[i].drivePositionRad;
     }
     ChassisSpeeds chassisState = kinematics.toChassisSpeeds(measuredStates);
-    // SwerveVizUtil.logModuleStates("MeasuredStates", measuredStates, maxLinearSpeed);
     if (gyroInputs.connected) { // Use gyro for angular change when connected
       odometryPose =
           odometryPose.exp(new Twist2d(chassisState.vxMetersPerSecond,
@@ -231,6 +246,18 @@ public class Drive extends SubsystemBase {
               chassisState.omegaRadiansPerSecond));
     }
     lastGyroPosRad = gyroInputs.positionRad;
+
+    // Log measured states
+    SwerveModuleState[] loggedMeasuredStates =
+        new SwerveModuleState[] {null, null, null, null};
+    for (int i = 0; i < 4; i++) {
+      loggedMeasuredStates[i] = new SwerveModuleState(
+          moduleInputs[i].driveVelocityRadPerSec * wheelRadius,
+          turnPositions[i]);
+    }
+    logModuleStates("SwerveModuleStates/Measured", loggedMeasuredStates);
+
+    // Log odometry pose
     Logger.getInstance().recordOutput("Odometry",
         new double[] {odometryPose.getX(), odometryPose.getY(),
             odometryPose.getRotation().getRadians()});
@@ -262,6 +289,16 @@ public class Drive extends SubsystemBase {
         }
       }
     }
+  }
+
+  private void logModuleStates(String key, SwerveModuleState[] states) {
+    List<Double> dataArray = new ArrayList<Double>();
+    for (int i = 0; i < 4; i++) {
+      dataArray.add(states[i].angle.getRadians());
+      dataArray.add(states[i].speedMetersPerSecond);
+    }
+    Logger.getInstance().recordOutput(key,
+        dataArray.stream().mapToDouble(Double::doubleValue).toArray());
   }
 
   /**
