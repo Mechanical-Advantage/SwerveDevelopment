@@ -72,10 +72,10 @@ public class AutoDrive extends CommandBase {
         maxAccelerationMetersPerSec2 = Units.inchesToMeters(120.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
 
-        driveKp.setDefault(0.0);
+        driveKp.setDefault(2.0);
         driveKd.setDefault(0.0);
 
-        turnKp.setDefault(0.0);
+        turnKp.setDefault(7.0);
         turnKd.setDefault(0.0);
         break;
       case ROBOT_SIMBOT:
@@ -95,10 +95,10 @@ public class AutoDrive extends CommandBase {
         maxAccelerationMetersPerSec2 = 0.0;
         maxCentripetalAccelerationMetersPerSec2 = 0.0;
 
-        driveKp.setDefault(2.0);
+        driveKp.setDefault(0.0);
         driveKd.setDefault(0.0);
 
-        turnKp.setDefault(7.0);
+        turnKp.setDefault(0.0);
         turnKd.setDefault(0.0);
         break;
     }
