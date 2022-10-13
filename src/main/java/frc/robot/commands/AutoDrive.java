@@ -95,10 +95,10 @@ public class AutoDrive extends CommandBase {
         maxAccelerationMetersPerSec2 = 0.0;
         maxCentripetalAccelerationMetersPerSec2 = 0.0;
 
-        driveKp.setDefault(0.0);
+        driveKp.setDefault(2.0);
         driveKd.setDefault(0.0);
 
-        turnKp.setDefault(0.0);
+        turnKp.setDefault(7.0);
         turnKd.setDefault(0.0);
         break;
     }
@@ -167,8 +167,8 @@ public class AutoDrive extends CommandBase {
       yController.setD(driveKd.get());
       yController.setP(driveKp.get());
 
-      thetaController.setD(driveKd.get());
-      thetaController.setP(driveKp.get());
+      thetaController.setD(turnKd.get());
+      thetaController.setP(turnKp.get());
     }
   }
 

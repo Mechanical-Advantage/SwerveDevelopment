@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
 import frc.robot.subsystems.drive.ModuleIO.ModuleIOInputs;
+import frc.robot.util.GeomUtil;
 import frc.robot.util.TunableNumber;
 
 public class Drive extends SubsystemBase {
@@ -62,7 +63,7 @@ public class Drive extends SubsystemBase {
   private double lastGyroPosRad = 0.0;
   private boolean brakeMode = false;
 
-  private boolean isNormalClosedLoopMode = false;
+  private DriveMode driveMode = DriveMode.NORMAL;
   private ChassisSpeeds closedLoopSetpoint = new ChassisSpeeds();
   private double characterizationVoltage = 0.0;
 
@@ -82,10 +83,10 @@ public class Drive extends SubsystemBase {
         trackWidthX = Units.inchesToMeters(25.0);
         trackWidthY = Units.inchesToMeters(24.0);
 
-        driveKp.setDefault(0.0);
+        driveKp.setDefault(0.1);
         driveKd.setDefault(0.0);
-        driveKs.setDefault(0.12763);
-        driveKv.setDefault(0.13453);
+        driveKs.setDefault(0.12349);
+        driveKv.setDefault(0.13477);
 
         turnKp.setDefault(10.0);
         turnKd.setDefault(0.0);
@@ -98,8 +99,8 @@ public class Drive extends SubsystemBase {
 
         driveKp.setDefault(0.9);
         driveKd.setDefault(0.0);
-        driveKs.setDefault(0.00785);
-        driveKv.setDefault(0.13394);
+        driveKs.setDefault(0.116970);
+        driveKv.setDefault(0.133240);
 
         turnKp.setDefault(23.0);
         turnKd.setDefault(0.0);
@@ -165,62 +166,93 @@ public class Drive extends SubsystemBase {
           new Rotation2d(moduleInputs[i].turnAbsolutePositionRad);
     }
 
-    // In normal mode, run the controllers for turning and driving based on the current setpoint
-    if (isNormalClosedLoopMode && DriverStation.isEnabled()) {
-      SwerveModuleState[] setpointStates =
-          kinematics.toSwerveModuleStates(closedLoopSetpoint);
-      SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates,
-          maxLinearSpeed);
-
-      SwerveModuleState[] setpointStatesOptimized =
-          new SwerveModuleState[] {null, null, null, null};
-      for (int i = 0; i < 4; i++) {
-        // Run turn controller
-        setpointStatesOptimized[i] =
-            SwerveModuleState.optimize(setpointStates[i], turnPositions[i]);
-        moduleIOs[i].setTurnVoltage(
-            turnFeedback[i].calculate(turnPositions[i].getRadians(),
-                setpointStatesOptimized[i].angle.getRadians()));
-
-        // Update velocity based on turn error
-        setpointStatesOptimized[i].speedMetersPerSecond *=
-            Math.cos(turnFeedback[i].getPositionError());
-
-        // Run drive controller
-        double velocityRadPerSec =
-            setpointStatesOptimized[i].speedMetersPerSecond / wheelRadius;
-        moduleIOs[i]
-            .setDriveVoltage(driveFeedforward.calculate(velocityRadPerSec)
-                + driveFeedback[i].calculate(
-                    moduleInputs[i].driveVelocityRadPerSec, velocityRadPerSec));
-
-        // Log individual setpoints
-        Logger.getInstance().recordOutput(
-            "SwerveDriveSetpoints/" + Integer.toString(i), velocityRadPerSec);
-        Logger.getInstance().recordOutput(
-            "SwerveTurnSetpoints/" + Integer.toString(i),
-            setpointStatesOptimized[i].angle.getRadians());
-      }
-
-      // Log all module setpoints
-      logModuleStates("SwerveModuleStates/Setpoints", setpointStates);
-      logModuleStates("SwerveModuleStates/SetpointsOptimized", setpointStates);
-    }
-
-    // In characterization mode, drive at the specified voltage (and turn to zero degrees)
-    if (!isNormalClosedLoopMode && DriverStation.isEnabled()) {
-      for (int i = 0; i < 4; i++) {
-        moduleIOs[i].setTurnVoltage(
-            turnFeedback[i].calculate(turnPositions[i].getRadians(), 0.0));
-        moduleIOs[i].setDriveVoltage(characterizationVoltage);
-      }
-    }
-
-    // Disable output while disabled
     if (DriverStation.isDisabled()) {
+      // Disable output while disabled
       for (int i = 0; i < 4; i++) {
         moduleIOs[i].setTurnVoltage(0.0);
         moduleIOs[i].setDriveVoltage(0.0);
+      }
+    } else {
+      switch (driveMode) {
+        case NORMAL:
+          // In normal mode, run the controllers for turning and driving based on the current
+          // setpoint
+          SwerveModuleState[] setpointStates =
+              kinematics.toSwerveModuleStates(closedLoopSetpoint);
+          SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates,
+              maxLinearSpeed);
+
+          // If stationary, go to last state
+          boolean isStationary =
+              Math.abs(closedLoopSetpoint.vxMetersPerSecond) < 1e-3
+                  && Math.abs(closedLoopSetpoint.vyMetersPerSecond) < 1e-3
+                  && Math.abs(closedLoopSetpoint.omegaRadiansPerSecond) < 1e-3;
+
+          SwerveModuleState[] setpointStatesOptimized =
+              new SwerveModuleState[] {null, null, null, null};
+          for (int i = 0; i < 4; i++) {
+            // Run turn controller
+            setpointStatesOptimized[i] =
+                SwerveModuleState.optimize(setpointStates[i], turnPositions[i]);
+            if (isStationary) {
+              moduleIOs[i].setTurnVoltage(0.0);
+            } else {
+              moduleIOs[i].setTurnVoltage(
+                  turnFeedback[i].calculate(turnPositions[i].getRadians(),
+                      setpointStatesOptimized[i].angle.getRadians()));
+            }
+
+            // Update velocity based on turn error
+            setpointStatesOptimized[i].speedMetersPerSecond *=
+                Math.cos(turnFeedback[i].getPositionError());
+
+            // Run drive controller
+            double velocityRadPerSec =
+                setpointStatesOptimized[i].speedMetersPerSecond / wheelRadius;
+            moduleIOs[i].setDriveVoltage(
+                driveFeedforward.calculate(velocityRadPerSec) + driveFeedback[i]
+                    .calculate(moduleInputs[i].driveVelocityRadPerSec,
+                        velocityRadPerSec));
+
+            // Log individual setpoints
+            Logger.getInstance().recordOutput(
+                "SwerveDriveSetpoints/" + Integer.toString(i),
+                velocityRadPerSec);
+            Logger.getInstance().recordOutput(
+                "SwerveTurnSetpoints/" + Integer.toString(i),
+                setpointStatesOptimized[i].angle.getRadians());
+          }
+
+          // Log all module setpoints
+          logModuleStates("SwerveModuleStates/Setpoints", setpointStates);
+          logModuleStates("SwerveModuleStates/SetpointsOptimized",
+              setpointStatesOptimized);
+          break;
+
+        case CHARACTERIZATION:
+          // In characterization mode, drive at the specified voltage (and turn to zero degrees)
+          for (int i = 0; i < 4; i++) {
+            moduleIOs[i].setTurnVoltage(
+                turnFeedback[i].calculate(turnPositions[i].getRadians(), 0.0));
+            moduleIOs[i].setDriveVoltage(characterizationVoltage);
+          }
+          break;
+
+        case X:
+          for (int i = 0; i < 4; i++) {
+            Rotation2d targetRotation =
+                GeomUtil.direction(getModuleTranslations()[i]);
+            Rotation2d currentRotation = turnPositions[i];
+            if (Math.abs(
+                targetRotation.minus(currentRotation).getDegrees()) > 90.0) {
+              targetRotation =
+                  targetRotation.minus(Rotation2d.fromDegrees(180.0));
+            }
+            moduleIOs[i].setTurnVoltage(turnFeedback[i].calculate(
+                currentRotation.getRadians(), targetRotation.getRadians()));
+            moduleIOs[i].setDriveVoltage(0.0);
+          }
+          break;
       }
     }
 
@@ -307,13 +339,17 @@ public class Drive extends SubsystemBase {
    * @param speeds Speeds in meters/sec
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    isNormalClosedLoopMode = true;
+    driveMode = DriveMode.NORMAL;
     closedLoopSetpoint = speeds;
   }
 
   /** Stops the drive. */
   public void stop() {
     runVelocity(new ChassisSpeeds());
+  }
+
+  public void goToX() {
+    driveMode = DriveMode.X;
   }
 
   /** Returns the maximum linear speed in meters per sec. */
@@ -352,7 +388,7 @@ public class Drive extends SubsystemBase {
 
   /** Runs forwards at the commanded voltage. */
   public void runCharacterizationVolts(double volts) {
-    isNormalClosedLoopMode = false;
+    driveMode = DriveMode.CHARACTERIZATION;
     characterizationVoltage = volts;
   }
 
@@ -363,5 +399,9 @@ public class Drive extends SubsystemBase {
       driveVelocityAverage += moduleInputs[i].driveVelocityRadPerSec;
     }
     return driveVelocityAverage / 4.0;
+  }
+
+  private static enum DriveMode {
+    NORMAL, X, CHARACTERIZATION
   }
 }

@@ -15,12 +15,13 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.Constants;
 import frc.robot.util.SparkMAXBurnManager;
+import frc.robot.util.SparkMaxDerivedVelocityController;
 
 public class ModuleIOSparkMAX implements ModuleIO {
   private final CANSparkMax driveSparkMax;
   private final CANSparkMax turnSparkMax;
 
-  private final RelativeEncoder driveRelativeEncoder;
+  private final SparkMaxDerivedVelocityController driveDerivedVelocityController;
   private final RelativeEncoder turnRelativeEncoder;
   private final AnalogInput turnAbsoluteEncoder;
 
@@ -81,9 +82,9 @@ public class ModuleIOSparkMAX implements ModuleIO {
     driveSparkMax.enableVoltageCompensation(12.0);
     turnSparkMax.enableVoltageCompensation(12.0);
 
-    driveRelativeEncoder = driveSparkMax.getEncoder();
+    driveDerivedVelocityController =
+        new SparkMaxDerivedVelocityController(driveSparkMax);
     turnRelativeEncoder = turnSparkMax.getEncoder();
-    driveRelativeEncoder.setPosition(0.0);
     turnRelativeEncoder.setPosition(0.0);
 
     driveSparkMax.setCANTimeout(0);
@@ -98,10 +99,11 @@ public class ModuleIOSparkMAX implements ModuleIO {
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
     inputs.drivePositionRad =
-        Units.rotationsToRadians(driveRelativeEncoder.getPosition())
+        Units.rotationsToRadians(driveDerivedVelocityController.getPosition())
             / driveAfterEncoderReduction;
     inputs.driveVelocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(
-        driveRelativeEncoder.getVelocity()) / driveAfterEncoderReduction;
+        driveDerivedVelocityController.getVelocity())
+        / driveAfterEncoderReduction;
     inputs.driveAppliedVolts =
         driveSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
     inputs.driveCurrentAmps = new double[] {driveSparkMax.getOutputCurrent()};

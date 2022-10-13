@@ -15,14 +15,18 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Mode;
 import frc.robot.commands.AutoDrive;
 import frc.robot.commands.DriveWithJoysticks;
 import frc.robot.commands.FeedForwardCharacterization;
+import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.commands.FiveCargoAuto;
 import frc.robot.commands.SixBallAuto;
 import frc.robot.commands.ThreeCargoAuto;
-import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -30,15 +34,12 @@ import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSparkMAX;
 import frc.robot.util.Alert;
+import frc.robot.util.Alert.AlertType;
 import frc.robot.util.DisabledInstantCommand;
 import frc.robot.util.GeomUtil;
 import frc.robot.util.LoggedChoosers;
 import frc.robot.util.SparkMAXBurnManager;
-import frc.robot.util.Alert.AlertType;
 import frc.robot.util.trajectory.Waypoint;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -165,6 +166,9 @@ public class RobotContainer {
           drive.setPose(
               new Pose2d(drive.getPose().getTranslation(), new Rotation2d()));
         }, drive));
+    new Trigger(() -> controller.getLeftTriggerAxis() > 0.5
+        || controller.getRightTriggerAxis() > 0.5)
+            .whileActiveContinuous(new RunCommand(drive::goToX, drive));
   }
 
   /**
