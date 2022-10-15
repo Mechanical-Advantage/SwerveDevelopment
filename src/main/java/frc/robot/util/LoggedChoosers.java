@@ -21,6 +21,8 @@ public class LoggedChoosers extends SubsystemBase {
       new SendableChooser<String>();
   private final SendableChooser<String> demoSpeedLimitChooser =
       new SendableChooser<String>();
+  private final SendableChooser<String> demoDriveModeChooser =
+      new SendableChooser<String>();
 
   private final ChooserData data = new ChooserData();
 
@@ -29,9 +31,11 @@ public class LoggedChoosers extends SubsystemBase {
         "Drive Characterization", "Three Cargo", "Five Cargo", "Six Cargo"));
     addOptions(demoSpeedLimitChooser, List.of("--Competition Mode--",
         "Fast Speed (70%)", "Medium Speed (30%)", "Slow Speed (15%)"));
+    addOptions(demoDriveModeChooser, List.of("--Competition Mode--", "Tank"));
 
     SmartDashboard.putData("Auto Routine", autoRoutineChooser);
     SmartDashboard.putData("Demo/Speed Limit", demoSpeedLimitChooser);
+    SmartDashboard.putData("Demo/Drive Mode", demoDriveModeChooser);
   }
 
   /** Adds a set of options to a SendableChooser. */
@@ -52,17 +56,20 @@ public class LoggedChoosers extends SubsystemBase {
   private static class ChooserData implements LoggableInputs {
     public String autoRoutine = "";
     public String demoSpeedLimit = "";
+    public String demoDriveMode = "";
 
     @Override
     public void toLog(LogTable table) {
       table.put("AutoRoutine", autoRoutine);
       table.put("DemoSpeedLimit", demoSpeedLimit);
+      table.put("DemoDriveMode", demoSpeedLimit);
     }
 
     @Override
     public void fromLog(LogTable table) {
       autoRoutine = table.getString("AutoRoutine", autoRoutine);
       demoSpeedLimit = table.getString("DemoSpeedLimit", demoSpeedLimit);
+      demoDriveMode = table.getString("DemoDriveMode", demoDriveMode);
     }
   }
 
@@ -72,6 +79,7 @@ public class LoggedChoosers extends SubsystemBase {
     if (!Logger.getInstance().hasReplaySource()) {
       data.autoRoutine = autoRoutineChooser.getSelected();
       data.demoSpeedLimit = demoSpeedLimitChooser.getSelected();
+      data.demoDriveMode = demoDriveModeChooser.getSelected();
     }
     Logger.getInstance().processInputs("Choosers", data);
   }
@@ -91,5 +99,9 @@ public class LoggedChoosers extends SubsystemBase {
       case "Slow Speed (15%)":
         return 0.15;
     }
+  }
+
+  public boolean getDemoTankMode() {
+    return data.demoDriveMode != "Tank";
   }
 }

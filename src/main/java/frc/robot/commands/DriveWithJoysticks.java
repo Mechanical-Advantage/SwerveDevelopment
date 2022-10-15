@@ -24,6 +24,7 @@ public class DriveWithJoysticks extends CommandBase {
   private final Supplier<Double> rightYSupplier;
   private final Supplier<Boolean> robotRelativeOverride;
   private final Supplier<Double> speedLimitSupplier;
+  private final Supplier<Boolean> tankModeSupplier;
 
   private static final double deadband = 0.1;
 
@@ -31,14 +32,15 @@ public class DriveWithJoysticks extends CommandBase {
   public DriveWithJoysticks(Drive drive, Supplier<Double> leftXSupplier,
       Supplier<Double> leftYSupplier, Supplier<Double> rightYSupplier,
       Supplier<Boolean> robotRelativeOverride,
-      Supplier<Double> speedLimitSuplier) {
+      Supplier<Double> speedLimitSupplier, Supplier<Boolean> tankModeSupplier) {
     addRequirements(drive);
     this.drive = drive;
     this.leftXSupplier = leftXSupplier;
     this.leftYSupplier = leftYSupplier;
     this.rightYSupplier = rightYSupplier;
     this.robotRelativeOverride = robotRelativeOverride;
-    this.speedLimitSupplier = speedLimitSuplier;
+    this.speedLimitSupplier = speedLimitSupplier;
+    this.tankModeSupplier = tankModeSupplier;
   }
 
   // Called when the command is initially scheduled.
@@ -72,6 +74,9 @@ public class DriveWithJoysticks extends CommandBase {
             .transformBy(
                 GeomUtil.transformFromTranslation(linearMagnitude, 0.0))
             .getTranslation();
+    if (tankModeSupplier.get()) {
+      linearVelocity = new Translation2d(linearVelocity.getX(), 0.0);
+    }
 
     // Send to drive
     double leftXMetersPerSec = linearVelocity.getX()
@@ -80,7 +85,7 @@ public class DriveWithJoysticks extends CommandBase {
         * drive.getMaxLinearSpeedMetersPerSec() * speedLimitSupplier.get();
     double rightYRadPerSec =
         rightY * drive.getMaxAngularSpeedRadPerSec() * speedLimitSupplier.get();
-    if (robotRelativeOverride.get()) {
+    if (robotRelativeOverride.get() || tankModeSupplier.get()) {
       drive.runVelocity(new ChassisSpeeds(leftXMetersPerSec, leftYMetersPerSec,
           rightYRadPerSec));
     } else {
