@@ -161,9 +161,9 @@ public class RobotContainer {
     drive.setDefaultCommand(
         new DriveWithJoysticks(drive, () -> -controller.getLeftY(),
             () -> -controller.getLeftX(), () -> -controller.getRightX(),
-            () -> !isFieldRelative, () -> choosers.getDemoLinearSpeedLimit(),
-            () -> choosers.getDemoAngularSpeedLimit(),
-            () -> choosers.getDemoTankMode()));
+            () -> !isFieldRelative, () -> choosers.getJoystickMode(),
+            () -> choosers.getDemoLinearSpeedLimit(),
+            () -> choosers.getDemoAngularSpeedLimit()));
     new Trigger(() -> controller.getLeftTriggerAxis() > 0.5
         || controller.getRightTriggerAxis() > 0.5)
             .whileActiveContinuous(new RunCommand(drive::goToX, drive));

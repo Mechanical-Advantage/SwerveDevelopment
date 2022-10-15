@@ -23,28 +23,27 @@ public class DriveWithJoysticks extends CommandBase {
   private final Supplier<Double> leftYSupplier;
   private final Supplier<Double> rightYSupplier;
   private final Supplier<Boolean> robotRelativeOverride;
+  private final Supplier<String> modeSupplier;
   private final Supplier<Double> linearSpeedLimitSupplier;
   private final Supplier<Double> angularSpeedLimitSupplier;
-  private final Supplier<Boolean> tankModeSupplier;
 
   private static final double deadband = 0.1;
 
   /** Creates a new DriveWithJoysticks. */
   public DriveWithJoysticks(Drive drive, Supplier<Double> leftXSupplier,
       Supplier<Double> leftYSupplier, Supplier<Double> rightYSupplier,
-      Supplier<Boolean> robotRelativeOverride,
+      Supplier<Boolean> robotRelativeOverride, Supplier<String> modeSupplier,
       Supplier<Double> linearSpeedLimitSupplier,
-      Supplier<Double> angularSpeedLimitSupplier,
-      Supplier<Boolean> tankModeSupplier) {
+      Supplier<Double> angularSpeedLimitSupplier) {
     addRequirements(drive);
     this.drive = drive;
     this.leftXSupplier = leftXSupplier;
     this.leftYSupplier = leftYSupplier;
     this.rightYSupplier = rightYSupplier;
     this.robotRelativeOverride = robotRelativeOverride;
+    this.modeSupplier = modeSupplier;
     this.linearSpeedLimitSupplier = linearSpeedLimitSupplier;
     this.angularSpeedLimitSupplier = angularSpeedLimitSupplier;
-    this.tankModeSupplier = tankModeSupplier;
   }
 
   // Called when the command is initially scheduled.
@@ -82,7 +81,7 @@ public class DriveWithJoysticks extends CommandBase {
             .transformBy(
                 GeomUtil.transformFromTranslation(linearMagnitude, 0.0))
             .getTranslation();
-    if (tankModeSupplier.get()) {
+    if (modeSupplier.get() == "Tank") {
       linearVelocity = new Translation2d(linearVelocity.getX(), 0.0);
     }
 
@@ -92,7 +91,7 @@ public class DriveWithJoysticks extends CommandBase {
     double leftYMetersPerSec =
         linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec();
     double rightYRadPerSec = rightY * drive.getMaxAngularSpeedRadPerSec();
-    if (robotRelativeOverride.get() || tankModeSupplier.get()) {
+    if (robotRelativeOverride.get() || modeSupplier.get() == "Tank") {
       drive.runVelocity(new ChassisSpeeds(leftXMetersPerSec, leftYMetersPerSec,
           rightYRadPerSec));
     } else {
