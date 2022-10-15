@@ -23,7 +23,8 @@ public class DriveWithJoysticks extends CommandBase {
   private final Supplier<Double> leftYSupplier;
   private final Supplier<Double> rightYSupplier;
   private final Supplier<Boolean> robotRelativeOverride;
-  private final Supplier<Double> speedLimitSupplier;
+  private final Supplier<Double> linearSpeedLimitSupplier;
+  private final Supplier<Double> angularSpeedLimitSupplier;
   private final Supplier<Boolean> tankModeSupplier;
 
   private static final double deadband = 0.1;
@@ -32,14 +33,17 @@ public class DriveWithJoysticks extends CommandBase {
   public DriveWithJoysticks(Drive drive, Supplier<Double> leftXSupplier,
       Supplier<Double> leftYSupplier, Supplier<Double> rightYSupplier,
       Supplier<Boolean> robotRelativeOverride,
-      Supplier<Double> speedLimitSupplier, Supplier<Boolean> tankModeSupplier) {
+      Supplier<Double> linearSpeedLimitSupplier,
+      Supplier<Double> angularSpeedLimitSupplier,
+      Supplier<Boolean> tankModeSupplier) {
     addRequirements(drive);
     this.drive = drive;
     this.leftXSupplier = leftXSupplier;
     this.leftYSupplier = leftYSupplier;
     this.rightYSupplier = rightYSupplier;
     this.robotRelativeOverride = robotRelativeOverride;
-    this.speedLimitSupplier = speedLimitSupplier;
+    this.linearSpeedLimitSupplier = linearSpeedLimitSupplier;
+    this.angularSpeedLimitSupplier = angularSpeedLimitSupplier;
     this.tankModeSupplier = tankModeSupplier;
   }
 
@@ -68,6 +72,10 @@ public class DriveWithJoysticks extends CommandBase {
         Math.copySign(linearMagnitude * linearMagnitude, linearMagnitude);
     rightY = Math.copySign(rightY * rightY, rightY);
 
+    // Apply speed limits
+    linearMagnitude *= linearSpeedLimitSupplier.get();
+    rightY *= angularSpeedLimitSupplier.get();
+
     // Calcaulate new linear components
     Translation2d linearVelocity =
         new Pose2d(new Translation2d(), linearDirection)
@@ -79,12 +87,11 @@ public class DriveWithJoysticks extends CommandBase {
     }
 
     // Send to drive
-    double leftXMetersPerSec = linearVelocity.getX()
-        * drive.getMaxLinearSpeedMetersPerSec() * speedLimitSupplier.get();
-    double leftYMetersPerSec = linearVelocity.getY()
-        * drive.getMaxLinearSpeedMetersPerSec() * speedLimitSupplier.get();
-    double rightYRadPerSec =
-        rightY * drive.getMaxAngularSpeedRadPerSec() * speedLimitSupplier.get();
+    double leftXMetersPerSec =
+        linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec();
+    double leftYMetersPerSec =
+        linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec();
+    double rightYRadPerSec = rightY * drive.getMaxAngularSpeedRadPerSec();
     if (robotRelativeOverride.get() || tankModeSupplier.get()) {
       drive.runVelocity(new ChassisSpeeds(leftXMetersPerSec, leftYMetersPerSec,
           rightYRadPerSec));

@@ -19,7 +19,9 @@ public class LoggedChoosers extends SubsystemBase {
 
   private final SendableChooser<String> autoRoutineChooser =
       new SendableChooser<String>();
-  private final SendableChooser<String> demoSpeedLimitChooser =
+  private final SendableChooser<String> demoLinearSpeedLimitChooser =
+      new SendableChooser<String>();
+  private final SendableChooser<String> demoAngularSpeedLimitChooser =
       new SendableChooser<String>();
   private final SendableChooser<String> demoDriveModeChooser =
       new SendableChooser<String>();
@@ -29,12 +31,17 @@ public class LoggedChoosers extends SubsystemBase {
   public LoggedChoosers() {
     addOptions(autoRoutineChooser, List.of("Do Nothing", "Test Routine",
         "Drive Characterization", "Three Cargo", "Five Cargo", "Six Cargo"));
-    addOptions(demoSpeedLimitChooser, List.of("--Competition Mode--",
+    addOptions(demoLinearSpeedLimitChooser, List.of("--Competition Mode--",
+        "Fast Speed (70%)", "Medium Speed (30%)", "Slow Speed (15%)"));
+    addOptions(demoAngularSpeedLimitChooser, List.of("--Competition Mode--",
         "Fast Speed (70%)", "Medium Speed (30%)", "Slow Speed (15%)"));
     addOptions(demoDriveModeChooser, List.of("--Competition Mode--", "Tank"));
 
     SmartDashboard.putData("Auto Routine", autoRoutineChooser);
-    SmartDashboard.putData("Demo/Speed Limit", demoSpeedLimitChooser);
+    SmartDashboard.putData("Demo/Linear Speed Limit",
+        demoLinearSpeedLimitChooser);
+    SmartDashboard.putData("Demo/Angular Speed Limit",
+        demoAngularSpeedLimitChooser);
     SmartDashboard.putData("Demo/Drive Mode", demoDriveModeChooser);
   }
 
@@ -55,20 +62,25 @@ public class LoggedChoosers extends SubsystemBase {
   /** Represents the selected values of all of the choosers. */
   private static class ChooserData implements LoggableInputs {
     public String autoRoutine = "";
-    public String demoSpeedLimit = "";
+    public String demoLinearSpeedLimit = "";
+    public String demoAngularSpeedLimit = "";
     public String demoDriveMode = "";
 
     @Override
     public void toLog(LogTable table) {
       table.put("AutoRoutine", autoRoutine);
-      table.put("DemoSpeedLimit", demoSpeedLimit);
-      table.put("DemoDriveMode", demoSpeedLimit);
+      table.put("DemoLinearSpeedLimit", demoLinearSpeedLimit);
+      table.put("DemoAngularSpeedLimit", demoAngularSpeedLimit);
+      table.put("DemoDriveMode", demoDriveMode);
     }
 
     @Override
     public void fromLog(LogTable table) {
       autoRoutine = table.getString("AutoRoutine", autoRoutine);
-      demoSpeedLimit = table.getString("DemoSpeedLimit", demoSpeedLimit);
+      demoLinearSpeedLimit =
+          table.getString("DemoLinearSpeedLimit", demoLinearSpeedLimit);
+      demoAngularSpeedLimit =
+          table.getString("DemoAngularSpeedLimit", demoAngularSpeedLimit);
       demoDriveMode = table.getString("DemoDriveMode", demoDriveMode);
     }
   }
@@ -78,7 +90,8 @@ public class LoggedChoosers extends SubsystemBase {
   public void periodic() {
     if (!Logger.getInstance().hasReplaySource()) {
       data.autoRoutine = autoRoutineChooser.getSelected();
-      data.demoSpeedLimit = demoSpeedLimitChooser.getSelected();
+      data.demoLinearSpeedLimit = demoLinearSpeedLimitChooser.getSelected();
+      data.demoAngularSpeedLimit = demoAngularSpeedLimitChooser.getSelected();
       data.demoDriveMode = demoDriveModeChooser.getSelected();
     }
     Logger.getInstance().processInputs("Choosers", data);
@@ -88,8 +101,21 @@ public class LoggedChoosers extends SubsystemBase {
     return data.autoRoutine;
   }
 
-  public double getDemoSpeedLimit() {
-    switch (data.demoSpeedLimit) {
+  public double getDemoLinearSpeedLimit() {
+    switch (data.demoLinearSpeedLimit) {
+      default:
+        return 1;
+      case "Fast Speed (70%)":
+        return 0.7;
+      case "Medium Speed (30%)":
+        return 0.3;
+      case "Slow Speed (15%)":
+        return 0.15;
+    }
+  }
+
+  public double getDemoAngularSpeedLimit() {
+    switch (data.demoAngularSpeedLimit) {
       default:
         return 1;
       case "Fast Speed (70%)":

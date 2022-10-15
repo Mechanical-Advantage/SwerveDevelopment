@@ -158,10 +158,12 @@ public class RobotContainer {
           SmartDashboard.putBoolean("Field Relative", isFieldRelative);
         }));
     SmartDashboard.putBoolean("Field Relative", isFieldRelative);
-    drive.setDefaultCommand(new DriveWithJoysticks(drive,
-        () -> -controller.getLeftY(), () -> -controller.getLeftX(),
-        () -> -controller.getRightX(), () -> !isFieldRelative,
-        () -> choosers.getDemoSpeedLimit(), () -> choosers.getDemoTankMode()));
+    drive.setDefaultCommand(
+        new DriveWithJoysticks(drive, () -> -controller.getLeftY(),
+            () -> -controller.getLeftX(), () -> -controller.getRightX(),
+            () -> !isFieldRelative, () -> choosers.getDemoLinearSpeedLimit(),
+            () -> choosers.getDemoAngularSpeedLimit(),
+            () -> choosers.getDemoTankMode()));
     new Trigger(() -> controller.getLeftTriggerAxis() > 0.5
         || controller.getRightTriggerAxis() > 0.5)
             .whileActiveContinuous(new RunCommand(drive::goToX, drive));
