@@ -128,6 +128,6 @@ public class LoggedChoosers extends SubsystemBase {
   }
 
   public boolean getDemoTankMode() {
-    return data.demoDriveMode != "Tank";
+    return data.demoDriveMode == "Tank";
   }
 }
