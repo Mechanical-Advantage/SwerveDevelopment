@@ -54,7 +54,7 @@ public class RobotContainer {
 
   // OI objects
   private XboxController controller = new XboxController(0);
-  private boolean isFieldRelative = false;
+  private boolean isFieldRelative = true;
 
   // Choosers
   private final LoggedChoosers choosers = new LoggedChoosers();
