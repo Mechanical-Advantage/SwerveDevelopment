@@ -23,19 +23,22 @@ public class DriveWithJoysticks extends CommandBase {
   private final Supplier<Double> leftYSupplier;
   private final Supplier<Double> rightYSupplier;
   private final Supplier<Boolean> robotRelativeOverride;
+  private final Supplier<Double> speedLimitSupplier;
 
   private static final double deadband = 0.1;
 
   /** Creates a new DriveWithJoysticks. */
   public DriveWithJoysticks(Drive drive, Supplier<Double> leftXSupplier,
       Supplier<Double> leftYSupplier, Supplier<Double> rightYSupplier,
-      Supplier<Boolean> robotRelativeOverride) {
+      Supplier<Boolean> robotRelativeOverride,
+      Supplier<Double> speedLimitSuplier) {
     addRequirements(drive);
     this.drive = drive;
     this.leftXSupplier = leftXSupplier;
     this.leftYSupplier = leftYSupplier;
     this.rightYSupplier = rightYSupplier;
     this.robotRelativeOverride = robotRelativeOverride;
+    this.speedLimitSupplier = speedLimitSuplier;
   }
 
   // Called when the command is initially scheduled.
@@ -71,11 +74,12 @@ public class DriveWithJoysticks extends CommandBase {
             .getTranslation();
 
     // Send to drive
-    double leftXMetersPerSec =
-        linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec();
-    double leftYMetersPerSec =
-        linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec();
-    double rightYRadPerSec = rightY * drive.getMaxAngularSpeedRadPerSec();
+    double leftXMetersPerSec = linearVelocity.getX()
+        * drive.getMaxLinearSpeedMetersPerSec() * speedLimitSupplier.get();
+    double leftYMetersPerSec = linearVelocity.getY()
+        * drive.getMaxLinearSpeedMetersPerSec() * speedLimitSupplier.get();
+    double rightYRadPerSec =
+        rightY * drive.getMaxAngularSpeedRadPerSec() * speedLimitSupplier.get();
     if (robotRelativeOverride.get()) {
       drive.runVelocity(new ChassisSpeeds(leftXMetersPerSec, leftYMetersPerSec,
           rightYRadPerSec));

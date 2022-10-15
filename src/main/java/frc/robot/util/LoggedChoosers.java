@@ -19,14 +19,19 @@ public class LoggedChoosers extends SubsystemBase {
 
   private final SendableChooser<String> autoRoutineChooser =
       new SendableChooser<String>();
+  private final SendableChooser<String> demoSpeedLimitChooser =
+      new SendableChooser<String>();
 
   private final ChooserData data = new ChooserData();
 
   public LoggedChoosers() {
     addOptions(autoRoutineChooser, List.of("Do Nothing", "Test Routine",
         "Drive Characterization", "Three Cargo", "Five Cargo", "Six Cargo"));
+    addOptions(demoSpeedLimitChooser, List.of("--Competition Mode--",
+        "Fast Speed (70%)", "Medium Speed (30%)", "Slow Speed (15%)"));
 
     SmartDashboard.putData("Auto Routine", autoRoutineChooser);
+    SmartDashboard.putData("Demo/Speed Limit", demoSpeedLimitChooser);
   }
 
   /** Adds a set of options to a SendableChooser. */
@@ -46,15 +51,18 @@ public class LoggedChoosers extends SubsystemBase {
   /** Represents the selected values of all of the choosers. */
   private static class ChooserData implements LoggableInputs {
     public String autoRoutine = "";
+    public String demoSpeedLimit = "";
 
     @Override
     public void toLog(LogTable table) {
       table.put("AutoRoutine", autoRoutine);
+      table.put("DemoSpeedLimit", demoSpeedLimit);
     }
 
     @Override
     public void fromLog(LogTable table) {
       autoRoutine = table.getString("AutoRoutine", autoRoutine);
+      demoSpeedLimit = table.getString("DemoSpeedLimit", demoSpeedLimit);
     }
   }
 
@@ -63,11 +71,25 @@ public class LoggedChoosers extends SubsystemBase {
   public void periodic() {
     if (!Logger.getInstance().hasReplaySource()) {
       data.autoRoutine = autoRoutineChooser.getSelected();
+      data.demoSpeedLimit = demoSpeedLimitChooser.getSelected();
     }
     Logger.getInstance().processInputs("Choosers", data);
   }
 
   public String getAutoRoutine() {
     return data.autoRoutine;
+  }
+
+  public double getDemoSpeedLimit() {
+    switch (data.demoSpeedLimit) {
+      default:
+        return 1;
+      case "Fast Speed (70%)":
+        return 0.7;
+      case "Medium Speed (30%)":
+        return 0.3;
+      case "Slow Speed (15%)":
+        return 0.15;
+    }
   }
 }
