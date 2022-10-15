@@ -14,10 +14,12 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Mode;
 import frc.robot.commands.AutoDrive;
@@ -160,16 +162,26 @@ public class RobotContainer {
         new DriveWithJoysticks(drive, () -> -controller.getLeftY(),
             () -> -controller.getLeftX(), () -> -controller.getRightX(),
             () -> !isFieldRelative, () -> choosers.getDemoSpeedLimit()));
-    new Trigger(controller::getLeftBumper)
-        .or(new Trigger(controller::getRightBumper))
-        .whenActive(new DisabledInstantCommand(() -> {
-          System.out.println("Odometry rotation was reset to zero");
-          drive.setPose(
-              new Pose2d(drive.getPose().getTranslation(), new Rotation2d()));
-        }, drive));
     new Trigger(() -> controller.getLeftTriggerAxis() > 0.5
         || controller.getRightTriggerAxis() > 0.5)
             .whileActiveContinuous(new RunCommand(drive::goToX, drive));
+
+    Command resetGyroCommand = new DisabledInstantCommand(() -> {
+      drive.setPose(
+          new Pose2d(drive.getPose().getTranslation(), new Rotation2d()));
+    }, drive);
+    Command rumbleCommand = new StartEndCommand(
+        () -> controller.setRumble(RumbleType.kRightRumble, 0.5),
+        () -> controller.setRumble(RumbleType.kRightRumble, 0.0)) {
+      @Override
+      public boolean runsWhenDisabled() {
+        return true;
+      }
+    }.withTimeout(0.2);
+    new Trigger(controller::getLeftBumper)
+        .and(new Trigger(controller::getRightBumper))
+        .whenActive(resetGyroCommand).whenActive(rumbleCommand);
+
   }
 
   /**
