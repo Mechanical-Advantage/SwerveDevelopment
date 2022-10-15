@@ -30,8 +30,10 @@ public class LoggedChoosers extends SubsystemBase {
 
   public LoggedChoosers() {
     addOptions(joystickModeChooser, List.of("Standard", "Tank"));
-    addOptions(autoRoutineChooser, List.of("Do Nothing", "Test Routine",
-        "Drive Characterization", "Three Cargo", "Five Cargo", "Six Cargo"));
+    addOptions(autoRoutineChooser,
+        List.of("Do Nothing", "Taxi (TA)", "Taxi (TB)", "Taxi (TC)",
+            "Taxi (TD)", "Taxi (FA)", "Taxi (FB)", "Drive Characterization",
+            "Three Cargo", "Five Cargo", "Six Cargo"));
     addOptions(demoLinearSpeedLimitChooser, List.of("--Competition Mode--",
         "Fast Speed (70%)", "Medium Speed (30%)", "Slow Speed (15%)"));
     addOptions(demoAngularSpeedLimitChooser, List.of("--Competition Mode--",

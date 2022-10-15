@@ -5,12 +5,10 @@
 package frc.robot;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
@@ -22,12 +20,12 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Mode;
-import frc.robot.commands.AutoDrive;
 import frc.robot.commands.DriveWithJoysticks;
 import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.commands.FiveCargoAuto;
 import frc.robot.commands.SixBallAuto;
+import frc.robot.commands.Taxi;
 import frc.robot.commands.ThreeCargoAuto;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -41,7 +39,6 @@ import frc.robot.util.DisabledInstantCommand;
 import frc.robot.util.GeomUtil;
 import frc.robot.util.LoggedChoosers;
 import frc.robot.util.SparkMAXBurnManager;
-import frc.robot.util.trajectory.Waypoint;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -93,47 +90,30 @@ public class RobotContainer {
     // Set up auto routines
     autoRoutineMap.put("Do Nothing",
         new AutoRoutine(AutoPosition.ORIGIN, new InstantCommand()));
+    autoRoutineMap.put("Taxi (TA)",
+        new AutoRoutine(AutoPosition.TARMAC_A, new Taxi(drive, false)));
+    autoRoutineMap.put("Taxi (TB)",
+        new AutoRoutine(AutoPosition.TARMAC_B, new Taxi(drive, false)));
+    autoRoutineMap.put("Taxi (TC)",
+        new AutoRoutine(AutoPosition.TARMAC_C, new Taxi(drive, false)));
+    autoRoutineMap.put("Taxi (TD)",
+        new AutoRoutine(AutoPosition.TARMAC_D, new Taxi(drive, false)));
+    autoRoutineMap.put("Taxi (FA)",
+        new AutoRoutine(AutoPosition.FENDER_A, new Taxi(drive, true)));
+    autoRoutineMap.put("Taxi (FB)",
+        new AutoRoutine(AutoPosition.FENDER_B, new Taxi(drive, true)));
     autoRoutineMap.put("Drive Characterization",
         new AutoRoutine(AutoPosition.ORIGIN,
             new FeedForwardCharacterization(drive, true,
                 new FeedForwardCharacterizationData("drive"),
                 drive::runCharacterizationVolts,
                 drive::getCharacterizationVelocity)));
-
     autoRoutineMap.put("Three Cargo",
         new AutoRoutine(AutoPosition.TARMAC_D, new ThreeCargoAuto(drive)));
-
     autoRoutineMap.put("Five Cargo",
         new AutoRoutine(AutoPosition.TARMAC_D, new FiveCargoAuto(drive)));
     autoRoutineMap.put("Six Cargo",
         new AutoRoutine(AutoPosition.TARMAC_D, new SixBallAuto(drive)));
-
-    autoRoutineMap.put("Test Routine",
-        new AutoRoutine(AutoPosition.ORIGIN,
-            new AutoDrive(drive, List.of(
-                new Waypoint(new Translation2d(), new Rotation2d(),
-                    new Rotation2d()),
-                new Waypoint(new Translation2d(7, 2),
-                    Rotation2d.fromDegrees(90.0), Rotation2d.fromDegrees(45.0)),
-                new Waypoint(new Translation2d(6, 3),
-                    Rotation2d.fromDegrees(180.0), null),
-                new Waypoint(new Translation2d(5, 2),
-                    Rotation2d.fromDegrees(-90.0), null),
-                new Waypoint(new Translation2d(9, 3),
-                    Rotation2d.fromDegrees(45.0), null),
-                new Waypoint(new Translation2d(9, 4), null,
-                    Rotation2d.fromDegrees(180.0)),
-                new Waypoint(new Translation2d(8, 5), null,
-                    Rotation2d.fromDegrees(-90.0)),
-                new Waypoint(new Translation2d(7, 4.5), null, null),
-                new Waypoint(new Translation2d(5, 4),
-                    Rotation2d.fromDegrees(45.0), Rotation2d.fromDegrees(45.0)),
-                new Waypoint(new Translation2d(4, 6),
-                    Rotation2d.fromDegrees(90.0), Rotation2d.fromDegrees(90.0)),
-                new Waypoint(new Translation2d(3, 8),
-                    Rotation2d.fromDegrees(180.0), null),
-                new Waypoint(new Translation2d(2, 4),
-                    Rotation2d.fromDegrees(-90.0), null)))));
 
     // Alert if in tuning mode
     if (Constants.tuningMode) {
