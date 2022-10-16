@@ -22,6 +22,7 @@ public class ModuleIOSparkMAX implements ModuleIO {
   private final CANSparkMax turnSparkMax;
 
   private final SparkMaxDerivedVelocityController driveDerivedVelocityController;
+  private final RelativeEncoder driveDefaultEncoder;
   private final RelativeEncoder turnRelativeEncoder;
   private final AnalogInput turnAbsoluteEncoder;
 
@@ -84,6 +85,7 @@ public class ModuleIOSparkMAX implements ModuleIO {
 
     driveDerivedVelocityController =
         new SparkMaxDerivedVelocityController(driveSparkMax);
+    driveDefaultEncoder = driveSparkMax.getEncoder();
     turnRelativeEncoder = turnSparkMax.getEncoder();
     turnRelativeEncoder.setPosition(0.0);
 
@@ -104,6 +106,9 @@ public class ModuleIOSparkMAX implements ModuleIO {
     inputs.driveVelocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(
         driveDerivedVelocityController.getVelocity())
         / driveAfterEncoderReduction;
+    inputs.driveVelocityFilteredRadPerSec =
+        Units.rotationsPerMinuteToRadiansPerSecond(
+            driveDefaultEncoder.getVelocity()) / driveAfterEncoderReduction;
     inputs.driveAppliedVolts =
         driveSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
     inputs.driveCurrentAmps = new double[] {driveSparkMax.getOutputCurrent()};

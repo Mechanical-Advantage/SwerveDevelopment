@@ -11,6 +11,7 @@ public interface ModuleIO {
   public static class ModuleIOInputs implements LoggableInputs {
     public double drivePositionRad = 0.0;
     public double driveVelocityRadPerSec = 0.0;
+    public double driveVelocityFilteredRadPerSec = 0.0;
     public double driveAppliedVolts = 0.0;
     public double[] driveCurrentAmps = new double[] {};
     public double[] driveTempCelcius = new double[] {};
@@ -25,6 +26,8 @@ public interface ModuleIO {
     public void toLog(LogTable table) {
       table.put("DrivePositionRad", drivePositionRad);
       table.put("DriveVelocityRadPerSec", driveVelocityRadPerSec);
+      table.put("DriveVelocityFilteredRadPerSec",
+          driveVelocityFilteredRadPerSec);
       table.put("DriveAppliedVolts", driveAppliedVolts);
       table.put("DriveCurrentAmps", driveCurrentAmps);
       table.put("DriveTempCelcius", driveTempCelcius);
@@ -41,6 +44,8 @@ public interface ModuleIO {
       drivePositionRad = table.getDouble("DrivePositionRad", drivePositionRad);
       driveVelocityRadPerSec =
           table.getDouble("DriveVelocityRadPerSec", driveVelocityRadPerSec);
+      driveVelocityFilteredRadPerSec = table.getDouble(
+          "DriveVelocityFilteredRadPerSec", driveVelocityFilteredRadPerSec);
       driveAppliedVolts =
           table.getDouble("DriveAppliedVolts", driveAppliedVolts);
       driveCurrentAmps =
