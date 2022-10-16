@@ -20,13 +20,18 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Mode;
+import frc.robot.commands.ClimbForFun;
 import frc.robot.commands.DriveWithJoysticks;
 import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.commands.FiveCargoAuto;
+import frc.robot.commands.RunClimber;
 import frc.robot.commands.SixBallAuto;
 import frc.robot.commands.Taxi;
 import frc.robot.commands.ThreeCargoAuto;
+import frc.robot.subsystems.climber.Climber;
+import frc.robot.subsystems.climber.ClimberIO;
+import frc.robot.subsystems.climber.ClimberIOTalonSRX;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -50,9 +55,11 @@ public class RobotContainer {
 
   // Subsystems
   private Drive drive;
+  private Climber climber;
 
   // OI objects
-  private XboxController controller = new XboxController(0);
+  private XboxController driverController = new XboxController(0);
+  private XboxController operatorController = new XboxController(1);
   private boolean isFieldRelative = true;
 
   // Choosers
@@ -72,6 +79,7 @@ public class RobotContainer {
           drive = new Drive(new GyroIOPigeon2(), new ModuleIOSparkMAX(0),
               new ModuleIOSparkMAX(1), new ModuleIOSparkMAX(2),
               new ModuleIOSparkMAX(3));
+          climber = new Climber(new ClimberIOTalonSRX());
           break;
         case ROBOT_SIMBOT:
           drive = new Drive(new GyroIO() {}, new ModuleIOSim(),
@@ -86,10 +94,13 @@ public class RobotContainer {
     drive = drive != null ? drive
         : new Drive(new GyroIO() {}, new ModuleIO() {}, new ModuleIO() {},
             new ModuleIO() {}, new ModuleIO() {});
+    climber = climber != null ? climber : new Climber(new ClimberIO() {});
 
     // Set up auto routines
     autoRoutineMap.put("Do Nothing",
         new AutoRoutine(AutoPosition.ORIGIN, new InstantCommand()));
+    autoRoutineMap.put("Climb For Fun (TA)", new AutoRoutine(
+        AutoPosition.TARMAC_A, new ClimbForFun(drive, climber)));
     autoRoutineMap.put("Taxi (TA)",
         new AutoRoutine(AutoPosition.TARMAC_A, new Taxi(drive, false)));
     autoRoutineMap.put("Taxi (TB)",
@@ -131,39 +142,44 @@ public class RobotContainer {
    * {@link edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    new Trigger(controller::getStartButton)
-        .or(new Trigger(controller::getBackButton))
+    // Driving controls
+    new Trigger(driverController::getStartButton)
+        .or(new Trigger(driverController::getBackButton))
         .whenActive(new DisabledInstantCommand(() -> {
           isFieldRelative = !isFieldRelative;
           SmartDashboard.putBoolean("Field Relative", isFieldRelative);
         }));
     SmartDashboard.putBoolean("Field Relative", isFieldRelative);
-    drive.setDefaultCommand(
-        new DriveWithJoysticks(drive, () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(), () -> -controller.getRightX(),
-            () -> !isFieldRelative, () -> choosers.getJoystickMode(),
-            () -> choosers.getDemoLinearSpeedLimit(),
-            () -> choosers.getDemoAngularSpeedLimit()));
-    new Trigger(() -> controller.getLeftTriggerAxis() > 0.5
-        || controller.getRightTriggerAxis() > 0.5)
+    drive.setDefaultCommand(new DriveWithJoysticks(drive,
+        () -> -driverController.getLeftY(), () -> -driverController.getLeftX(),
+        () -> -driverController.getRightX(), () -> !isFieldRelative,
+        () -> choosers.getJoystickMode(),
+        () -> choosers.getDemoLinearSpeedLimit(),
+        () -> choosers.getDemoAngularSpeedLimit()));
+    new Trigger(() -> driverController.getLeftTriggerAxis() > 0.5
+        || driverController.getRightTriggerAxis() > 0.5)
             .whileActiveContinuous(new RunCommand(drive::goToX, drive));
 
+    // Reset gyro command
     Command resetGyroCommand = new DisabledInstantCommand(() -> {
       drive.setPose(
           new Pose2d(drive.getPose().getTranslation(), new Rotation2d()));
     }, drive);
     Command rumbleCommand = new StartEndCommand(
-        () -> controller.setRumble(RumbleType.kRightRumble, 0.5),
-        () -> controller.setRumble(RumbleType.kRightRumble, 0.0)) {
+        () -> driverController.setRumble(RumbleType.kRightRumble, 0.5),
+        () -> driverController.setRumble(RumbleType.kRightRumble, 0.0)) {
       @Override
       public boolean runsWhenDisabled() {
         return true;
       }
     }.withTimeout(0.2);
-    new Trigger(controller::getLeftBumper)
-        .and(new Trigger(controller::getRightBumper))
+    new Trigger(driverController::getLeftBumper)
+        .and(new Trigger(driverController::getRightBumper))
         .whenActive(resetGyroCommand).whenActive(rumbleCommand);
 
+    // Climber controls
+    climber.setDefaultCommand(
+        new RunClimber(climber, () -> -operatorController.getLeftY()));
   }
 
   /**

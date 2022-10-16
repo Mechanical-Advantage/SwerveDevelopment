@@ -15,6 +15,7 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryParameterizer.TrajectoryGenerationException;
 import edu.wpi.first.math.trajectory.constraint.CentripetalAccelerationConstraint;
+import edu.wpi.first.math.trajectory.constraint.TrajectoryConstraint;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -59,9 +60,12 @@ public class AutoDrive extends CommandBase {
   private static final Alert generatorAlert = new Alert(
       "Failed to generate all trajectories, check constants.", AlertType.ERROR);
 
-  // Use addRequirements() here to declare subsystem dependencies.
-  // Select max velocity and acceleration
   public AutoDrive(Drive drive, List<Waypoint> waypoints) {
+    this(drive, waypoints, List.of());
+  }
+
+  public AutoDrive(Drive drive, List<Waypoint> waypoints,
+      List<TrajectoryConstraint> constraints) {
     addRequirements(drive);
     this.drive = drive;
 
@@ -109,7 +113,8 @@ public class AutoDrive extends CommandBase {
             .setKinematics(
                 new SwerveDriveKinematics(drive.getModuleTranslations()))
             .addConstraint(new CentripetalAccelerationConstraint(
-                maxCentripetalAccelerationMetersPerSec2));
+                maxCentripetalAccelerationMetersPerSec2))
+            .addConstraints(constraints);
 
     // Generate trajectory
     try {
