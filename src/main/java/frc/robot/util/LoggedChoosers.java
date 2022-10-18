@@ -31,7 +31,7 @@ public class LoggedChoosers extends SubsystemBase {
   public LoggedChoosers() {
     addOptions(joystickModeChooser, List.of("Standard", "Tank"));
     addOptions(autoRoutineChooser,
-        List.of("Do Nothing", "Climb For Fun (TA)", "Taxi (TA)", "Taxi (TB)",
+        List.of("Do Nothing", "Climb For Fun (FA*)", "Taxi (TA)", "Taxi (TB)",
             "Taxi (TC)", "Taxi (TD)", "Taxi (FA)", "Taxi (FB)",
             "Drive Characterization", "Three Cargo", "Five Cargo",
             "Six Cargo"));

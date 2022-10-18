@@ -9,6 +9,8 @@ import java.util.Map;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
@@ -99,8 +101,8 @@ public class RobotContainer {
     // Set up auto routines
     autoRoutineMap.put("Do Nothing",
         new AutoRoutine(AutoPosition.ORIGIN, new InstantCommand()));
-    autoRoutineMap.put("Climb For Fun (TA)", new AutoRoutine(
-        AutoPosition.TARMAC_A, new ClimbForFun(drive, climber)));
+    autoRoutineMap.put("Climb For Fun (FA*)", new AutoRoutine(
+        AutoPosition.FENDER_A_BACKWARD, new ClimbForFun(drive, climber)));
     autoRoutineMap.put("Taxi (TA)",
         new AutoRoutine(AutoPosition.TARMAC_A, new Taxi(drive, false)));
     autoRoutineMap.put("Taxi (TB)",
@@ -212,7 +214,7 @@ public class RobotContainer {
   }
 
   public static enum AutoPosition {
-    ORIGIN, TARMAC_A, TARMAC_B, TARMAC_C, TARMAC_D, FENDER_A, FENDER_B;
+    ORIGIN, TARMAC_A, TARMAC_B, TARMAC_C, TARMAC_D, FENDER_A, FENDER_A_BACKWARD, FENDER_B;
 
     public Pose2d getPose() {
       switch (this) {
@@ -233,6 +235,9 @@ public class RobotContainer {
         case FENDER_A:
           return FieldConstants.fenderA
               .transformBy(GeomUtil.transformFromTranslation(0.5, 0.0));
+        case FENDER_A_BACKWARD:
+          return FieldConstants.fenderA.transformBy(new Transform2d(
+              new Translation2d(0.5, 0.0), Rotation2d.fromDegrees(180.0)));
         case FENDER_B:
           return FieldConstants.fenderB
               .transformBy(GeomUtil.transformFromTranslation(0.5, 0.0));

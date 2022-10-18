@@ -21,6 +21,14 @@ import frc.robot.util.GeomUtil;
 import frc.robot.util.trajectory.Waypoint;
 
 public class ClimbForFun extends SequentialCommandGroup {
+  public static final Pose2d hangarHugPose = new Pose2d(
+      new Translation2d(FieldConstants.hangarLength,
+          FieldConstants.fieldWidth - FieldConstants.hangarWidth - 0.7),
+      Rotation2d.fromDegrees(180.0));
+  public static final Pose2d hangarSidePose = new Pose2d(
+      new Translation2d(FieldConstants.hangarLength / 2,
+          FieldConstants.fieldWidth - FieldConstants.hangarWidth),
+      Rotation2d.fromDegrees(90.0));
   public static final Pose2d extendPose = new Pose2d(
       new Translation2d(FieldConstants.hangarLength - 1.2,
           FieldConstants.fieldWidth - (FieldConstants.hangarWidth / 2)),
@@ -31,15 +39,18 @@ public class ClimbForFun extends SequentialCommandGroup {
       extendPose.transformBy(GeomUtil.transformFromTranslation(-0.5, 0.0));
   public static final double grabVelocity = Units.inchesToMeters(10.0);
   public static final double climbRetractPercent = -1.0;
-  public static final double climbRetractTime = 1.0;
+  public static final double climbRetractTime = 1.75;
 
   /** Creates a new ClimbForFun. */
   public ClimbForFun(Drive drive, Climber climber) {
     addCommands(
         new AutoDrive(drive,
-            List.of(Waypoint.fromHolonomicPose(AutoPosition.TARMAC_A.getPose()),
-                Waypoint.fromHolonomicPose(extendPose,
-                    extendPose.getRotation()))),
+            List.of(
+                Waypoint.fromHolonomicPose(
+                    AutoPosition.FENDER_A_BACKWARD.getPose()),
+                Waypoint.fromDifferentialPose(hangarHugPose),
+                Waypoint.fromDifferentialPose(hangarSidePose),
+                Waypoint.fromHolonomicPose(extendPose))),
         new StartEndCommand(() -> climber.runPercent(climbExtendPercent),
             climber::stop, climber).withTimeout(climbExtendTime),
         new AutoDrive(drive,
