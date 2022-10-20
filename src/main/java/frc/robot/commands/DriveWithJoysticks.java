@@ -7,6 +7,7 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.util.AutoDriveSoft;
 import frc.robot.util.GeomUtil;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.MathUtil;
@@ -26,6 +27,7 @@ public class DriveWithJoysticks extends CommandBase {
   private final Supplier<String> modeSupplier;
   private final Supplier<Double> linearSpeedLimitSupplier;
   private final Supplier<Double> angularSpeedLimitSupplier;
+  private final Supplier<Boolean> autoDriveSupplier;
 
   private static final double deadband = 0.1;
 
@@ -34,7 +36,8 @@ public class DriveWithJoysticks extends CommandBase {
       Supplier<Double> leftYSupplier, Supplier<Double> rightYSupplier,
       Supplier<Boolean> robotRelativeOverride, Supplier<String> modeSupplier,
       Supplier<Double> linearSpeedLimitSupplier,
-      Supplier<Double> angularSpeedLimitSupplier) {
+      Supplier<Double> angularSpeedLimitSupplier,
+      Supplier<Boolean> autoDriveSupplier) {
     addRequirements(drive);
     this.drive = drive;
     this.leftXSupplier = leftXSupplier;
@@ -44,6 +47,7 @@ public class DriveWithJoysticks extends CommandBase {
     this.modeSupplier = modeSupplier;
     this.linearSpeedLimitSupplier = linearSpeedLimitSupplier;
     this.angularSpeedLimitSupplier = angularSpeedLimitSupplier;
+    this.autoDriveSupplier = autoDriveSupplier;
   }
 
   // Called when the command is initially scheduled.
@@ -91,12 +95,19 @@ public class DriveWithJoysticks extends CommandBase {
     double leftYMetersPerSec =
         linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec();
     double rightYRadPerSec = rightY * drive.getMaxAngularSpeedRadPerSec();
+
     if (robotRelativeOverride.get() || modeSupplier.get() == "Tank") {
       drive.runVelocity(new ChassisSpeeds(leftXMetersPerSec, leftYMetersPerSec,
           rightYRadPerSec));
     } else {
-      drive.runVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(leftXMetersPerSec,
-          leftYMetersPerSec, rightYRadPerSec, drive.getRotation()));
+      ChassisSpeeds commandedSpeeds = new ChassisSpeeds(leftXMetersPerSec,
+          leftYMetersPerSec, rightYRadPerSec);
+      ChassisSpeeds adjustedSpeeds = autoDriveSupplier.get()
+          ? AutoDriveSoft.calculate(commandedSpeeds, drive.getPose())
+          : commandedSpeeds;
+      drive.runVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
+          adjustedSpeeds.vxMetersPerSecond, adjustedSpeeds.vyMetersPerSecond,
+          adjustedSpeeds.omegaRadiansPerSecond, drive.getRotation()));
     }
   }
 

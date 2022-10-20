@@ -18,10 +18,10 @@ import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Mode;
+import frc.robot.commands.AutoDriveHard;
 import frc.robot.commands.ClimbForFun;
 import frc.robot.commands.DriveWithJoysticks;
 import frc.robot.commands.FeedForwardCharacterization;
@@ -54,6 +54,9 @@ import frc.robot.util.SparkMAXBurnManager;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
+
+  public static final Pose2d autoDriveTarget =
+      new Pose2d(4.0, 2.0, new Rotation2d());
 
   // Subsystems
   private Drive drive;
@@ -157,15 +160,12 @@ public class RobotContainer {
         () -> -driverController.getRightX(), () -> !isFieldRelative,
         () -> choosers.getJoystickMode(),
         () -> choosers.getDemoLinearSpeedLimit(),
-        () -> choosers.getDemoAngularSpeedLimit()));
-    new Trigger(() -> driverController.getLeftTriggerAxis() > 0.5
-        || driverController.getRightTriggerAxis() > 0.5)
-            .whileActiveContinuous(new RunCommand(drive::goToX, drive));
+        () -> choosers.getDemoAngularSpeedLimit(),
+        () -> driverController.getRightTriggerAxis() > 0.5));
 
     // Reset gyro command
     Command resetGyroCommand = new DisabledInstantCommand(() -> {
-      drive.setPose(
-          new Pose2d(drive.getPose().getTranslation(), new Rotation2d()));
+      drive.setPose(autoDriveTarget);
     }, drive);
     Command rumbleCommand = new StartEndCommand(
         () -> driverController.setRumble(RumbleType.kRightRumble, 0.5),
@@ -178,6 +178,10 @@ public class RobotContainer {
     new Trigger(driverController::getLeftBumper)
         .and(new Trigger(driverController::getRightBumper))
         .whenActive(resetGyroCommand).whenActive(rumbleCommand);
+
+    // Auto drive controls
+    new Trigger(() -> driverController.getLeftTriggerAxis() > 0.5)
+        .whileActiveOnce(new AutoDriveHard(drive));
 
     // Climber controls
     climber.setDefaultCommand(

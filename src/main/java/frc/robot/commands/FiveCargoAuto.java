@@ -25,11 +25,12 @@ public class FiveCargoAuto extends SequentialCommandGroup {
   /** Creates a new FiveCargoAuto. */
   public FiveCargoAuto(Drive drive) {
     addCommands(new ThreeCargoAuto(drive),
-        new AutoDrive(drive,
+        new DriveTrajectory(drive,
             List.of(Waypoint.fromHolonomicPose(ThreeCargoAuto.cargoDPosition),
                 Waypoint.fromHolonomicPose(cargoGPosition))),
-        new AutoDrive(drive, List.of(Waypoint.fromHolonomicPose(cargoGPosition),
-            Waypoint.fromHolonomicPose(endPosition))));
+        new DriveTrajectory(drive,
+            List.of(Waypoint.fromHolonomicPose(cargoGPosition),
+                Waypoint.fromHolonomicPose(endPosition))));
 
   }
 

@@ -44,7 +44,7 @@ public class ClimbForFun extends SequentialCommandGroup {
   /** Creates a new ClimbForFun. */
   public ClimbForFun(Drive drive, Climber climber) {
     addCommands(
-        new AutoDrive(drive,
+        new DriveTrajectory(drive,
             List.of(
                 Waypoint.fromHolonomicPose(
                     AutoPosition.FENDER_A_BACKWARD.getPose()),
@@ -53,7 +53,7 @@ public class ClimbForFun extends SequentialCommandGroup {
                 Waypoint.fromHolonomicPose(extendPose))),
         new StartEndCommand(() -> climber.runPercent(climbExtendPercent),
             climber::stop, climber).withTimeout(climbExtendTime),
-        new AutoDrive(drive,
+        new DriveTrajectory(drive,
             List.of(Waypoint.fromHolonomicPose(extendPose),
                 Waypoint.fromHolonomicPose(grabPose)),
             List.of(new MaxVelocityConstraint(grabVelocity))),

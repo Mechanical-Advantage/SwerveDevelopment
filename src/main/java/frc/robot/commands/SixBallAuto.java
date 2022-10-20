@@ -4,7 +4,6 @@
 
 package frc.robot.commands;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -43,17 +42,17 @@ public class SixBallAuto extends SequentialCommandGroup {
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(new ThreeCargoAuto(drive),
         // spawn to cargoG
-        new AutoDrive(drive,
+        new DriveTrajectory(drive,
             List.of(Waypoint.fromHolonomicPose(ThreeCargoAuto.cargoDPosition),
                 Waypoint.fromHolonomicPose(FiveCargoAuto.cargoGPosition))),
         // cargoG mario kart around hangar to right before cargoB
-        new AutoDrive(drive,
+        new DriveTrajectory(drive,
             List.of(Waypoint.fromHolonomicPose(FiveCargoAuto.cargoGPosition),
                 // ADD HANGAR WAYPOINT
                 new Waypoint(centerHangarPosition),
                 Waypoint.fromDifferentialPose(aroundCargoB),
                 Waypoint.fromHolonomicPose(frontCargoB))),
-        new AutoDrive(drive,
+        new DriveTrajectory(drive,
             // right before cargoB to cargoB
             List.of(Waypoint.fromHolonomicPose(frontCargoB),
                 Waypoint.fromHolonomicPose(endPosition))));

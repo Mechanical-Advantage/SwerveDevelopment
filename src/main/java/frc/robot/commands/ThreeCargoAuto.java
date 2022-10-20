@@ -35,10 +35,10 @@ public class ThreeCargoAuto extends SequentialCommandGroup {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(
-        new AutoDrive(drive,
+        new DriveTrajectory(drive,
             List.of(Waypoint.fromHolonomicPose(startPosition),
                 Waypoint.fromHolonomicPose(cargoEPosition))),
-        new AutoDrive(drive,
+        new DriveTrajectory(drive,
             List.of(Waypoint.fromHolonomicPose(cargoEPosition),
                 Waypoint.fromHolonomicPose(halfCargoDPosition),
                 Waypoint.fromHolonomicPose(cargoDPosition))));

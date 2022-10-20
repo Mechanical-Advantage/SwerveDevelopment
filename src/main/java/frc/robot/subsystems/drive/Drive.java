@@ -59,6 +59,7 @@ public class Drive extends SubsystemBase {
   private final PIDController[] turnFeedback = new PIDController[4];
 
   private Pose2d odometryPose = new Pose2d();
+  private Translation2d fieldVelocity = new Translation2d();
   private double[] lastModulePositionsRad = new double[] {0.0, 0.0, 0.0, 0.0};
   private double lastGyroPosRad = 0.0;
   private boolean brakeMode = false;
@@ -257,37 +258,43 @@ public class Drive extends SubsystemBase {
     }
 
     // Update odometry
-    SwerveModuleState[] measuredStates = new SwerveModuleState[4];
+    SwerveModuleState[] measuredStatesDiff = new SwerveModuleState[4];
     for (int i = 0; i < 4; i++) {
-      measuredStates[i] = new SwerveModuleState(
+      measuredStatesDiff[i] = new SwerveModuleState(
           (moduleInputs[i].drivePositionRad - lastModulePositionsRad[i])
               * wheelRadius,
           turnPositions[i]);
       lastModulePositionsRad[i] = moduleInputs[i].drivePositionRad;
     }
-    ChassisSpeeds chassisState = kinematics.toChassisSpeeds(measuredStates);
+    ChassisSpeeds chassisStateDiff =
+        kinematics.toChassisSpeeds(measuredStatesDiff);
     if (gyroInputs.connected) { // Use gyro for angular change when connected
       odometryPose =
-          odometryPose.exp(new Twist2d(chassisState.vxMetersPerSecond,
-              chassisState.vyMetersPerSecond,
+          odometryPose.exp(new Twist2d(chassisStateDiff.vxMetersPerSecond,
+              chassisStateDiff.vyMetersPerSecond,
               gyroInputs.positionRad - lastGyroPosRad));
     } else { // Fall back to using angular velocity (disconnected or sim)
       odometryPose =
-          odometryPose.exp(new Twist2d(chassisState.vxMetersPerSecond,
-              chassisState.vyMetersPerSecond,
-              chassisState.omegaRadiansPerSecond));
+          odometryPose.exp(new Twist2d(chassisStateDiff.vxMetersPerSecond,
+              chassisStateDiff.vyMetersPerSecond,
+              chassisStateDiff.omegaRadiansPerSecond));
     }
     lastGyroPosRad = gyroInputs.positionRad;
 
-    // Log measured states
-    SwerveModuleState[] loggedMeasuredStates =
+    // Update field velocity
+    SwerveModuleState[] measuredStates =
         new SwerveModuleState[] {null, null, null, null};
     for (int i = 0; i < 4; i++) {
-      loggedMeasuredStates[i] = new SwerveModuleState(
+      measuredStates[i] = new SwerveModuleState(
           moduleInputs[i].driveVelocityRadPerSec * wheelRadius,
           turnPositions[i]);
     }
-    logModuleStates("SwerveModuleStates/Measured", loggedMeasuredStates);
+    ChassisSpeeds chassisState = kinematics.toChassisSpeeds(measuredStates);
+    fieldVelocity = new Translation2d(chassisState.vxMetersPerSecond,
+        chassisState.vyMetersPerSecond).rotateBy(getRotation());
+
+    // Log measured states
+    logModuleStates("SwerveModuleStates/Measured", measuredStates);
 
     // Log odometry pose
     Logger.getInstance().recordOutput("Odometry",
@@ -375,6 +382,10 @@ public class Drive extends SubsystemBase {
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     odometryPose = pose;
+  }
+
+  public Translation2d getFieldVelocity() {
+    return fieldVelocity;
   }
 
   /** Returns an array of module translations. */

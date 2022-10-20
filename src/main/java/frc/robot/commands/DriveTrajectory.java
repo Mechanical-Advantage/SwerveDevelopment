@@ -31,7 +31,7 @@ import frc.robot.util.trajectory.RotationSequence;
 import frc.robot.util.trajectory.Waypoint;
 
 
-public class AutoDrive extends CommandBase {
+public class DriveTrajectory extends CommandBase {
   private final double maxVelocityMetersPerSec;
   private final double maxAccelerationMetersPerSec2;
   private final double maxCentripetalAccelerationMetersPerSec2;
@@ -56,15 +56,25 @@ public class AutoDrive extends CommandBase {
 
   private final CustomTrajectoryGenerator customGenerator =
       new CustomTrajectoryGenerator();
-
   private static final Alert generatorAlert = new Alert(
       "Failed to generate all trajectories, check constants.", AlertType.ERROR);
 
-  public AutoDrive(Drive drive, List<Waypoint> waypoints) {
-    this(drive, waypoints, List.of());
+  public DriveTrajectory(Drive drive, List<Waypoint> waypoints) {
+    this(drive, waypoints, 0.0, 0.0, List.of());
   }
 
-  public AutoDrive(Drive drive, List<Waypoint> waypoints,
+  public DriveTrajectory(Drive drive, List<Waypoint> waypoints,
+      double startVelocity, double endVelocity) {
+    this(drive, waypoints, startVelocity, endVelocity, List.of());
+  }
+
+  public DriveTrajectory(Drive drive, List<Waypoint> waypoints,
+      List<TrajectoryConstraint> constraints) {
+    this(drive, waypoints, 0.0, 0.0, constraints);
+  }
+
+  public DriveTrajectory(Drive drive, List<Waypoint> waypoints,
+      double startVelocity, double endVelocity,
       List<TrajectoryConstraint> constraints) {
     addRequirements(drive);
     this.drive = drive;
@@ -73,7 +83,7 @@ public class AutoDrive extends CommandBase {
     switch (Constants.getRobot()) {
       case ROBOT_2022S:
         maxVelocityMetersPerSec = Units.inchesToMeters(150.0);
-        maxAccelerationMetersPerSec2 = Units.inchesToMeters(120.0);
+        maxAccelerationMetersPerSec2 = Units.inchesToMeters(200.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
 
         driveKp.setDefault(2.0);
@@ -84,7 +94,7 @@ public class AutoDrive extends CommandBase {
         break;
       case ROBOT_SIMBOT:
         maxVelocityMetersPerSec = Units.inchesToMeters(150.0);
-        maxAccelerationMetersPerSec2 = Units.inchesToMeters(120.0);
+        maxAccelerationMetersPerSec2 = Units.inchesToMeters(200.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
 
         driveKp.setDefault(0.0);
@@ -112,6 +122,7 @@ public class AutoDrive extends CommandBase {
         maxAccelerationMetersPerSec2)
             .setKinematics(
                 new SwerveDriveKinematics(drive.getModuleTranslations()))
+            .setStartVelocity(startVelocity).setEndVelocity(endVelocity)
             .addConstraint(new CentripetalAccelerationConstraint(
                 maxCentripetalAccelerationMetersPerSec2))
             .addConstraints(constraints);
