@@ -172,7 +172,7 @@ public class RobotContainer {
         () -> choosers.getJoystickMode(),
         () -> choosers.getDemoLinearSpeedLimit(),
         () -> choosers.getDemoAngularSpeedLimit(),
-        () -> driverController.getRightTriggerAxis() > 0.5));
+        () -> driverController.getRightTriggerAxis()));
 
     // Reset gyro command
     Command resetGyroCommand = new DisabledInstantCommand(() -> {
