@@ -191,8 +191,8 @@ public class RobotContainer {
         .whenActive(resetGyroCommand).whenActive(rumbleCommand);
 
     // Auto drive controls
-    new Trigger(() -> driverController.getLeftTriggerAxis() > 0.5)
-        .whileActiveOnce(new AutoDriveHard(drive));
+    // new Trigger(() -> driverController.getLeftTriggerAxis() > 0.5)
+    // .whileActiveOnce(new AutoDriveHard(drive));
 
     // Climber controls
     climber.setDefaultCommand(
