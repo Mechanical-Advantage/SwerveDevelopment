@@ -23,7 +23,7 @@ import frc.robot.util.trajectory.Waypoint;
 public class ClimbForFun extends SequentialCommandGroup {
   public static final Pose2d hangarHugPose = new Pose2d(
       new Translation2d(FieldConstants.hangarLength,
-          FieldConstants.fieldWidth - FieldConstants.hangarWidth - 0.7),
+          FieldConstants.fieldWidth - FieldConstants.hangarWidth - 0.8),
       Rotation2d.fromDegrees(180.0));
   public static final Pose2d hangarSidePose = new Pose2d(
       new Translation2d(FieldConstants.hangarLength / 2,
@@ -42,12 +42,10 @@ public class ClimbForFun extends SequentialCommandGroup {
   public static final double climbRetractTime = 1.75;
 
   /** Creates a new ClimbForFun. */
-  public ClimbForFun(Drive drive, Climber climber) {
+  public ClimbForFun(Drive drive, Climber climber, AutoPosition startPosition) {
     addCommands(
         new DriveTrajectory(drive,
-            List.of(
-                Waypoint.fromHolonomicPose(
-                    AutoPosition.FENDER_A_BACKWARD.getPose()),
+            List.of(Waypoint.fromHolonomicPose(startPosition.getPose()),
                 Waypoint.fromDifferentialPose(hangarHugPose),
                 Waypoint.fromDifferentialPose(hangarSidePose),
                 Waypoint.fromHolonomicPose(extendPose))),

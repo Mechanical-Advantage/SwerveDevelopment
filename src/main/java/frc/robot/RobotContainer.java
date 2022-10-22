@@ -28,6 +28,7 @@ import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.robot.commands.FiveCargoAuto;
 import frc.robot.commands.RunClimber;
+import frc.robot.commands.ScoreWithForce;
 import frc.robot.commands.SixBallAuto;
 import frc.robot.commands.Taxi;
 import frc.robot.commands.ThreeCargoAuto;
@@ -104,8 +105,18 @@ public class RobotContainer {
     // Set up auto routines
     autoRoutineMap.put("Do Nothing",
         new AutoRoutine(AutoPosition.ORIGIN, new InstantCommand()));
-    autoRoutineMap.put("Climb For Fun (FA*)", new AutoRoutine(
-        AutoPosition.FENDER_A_BACKWARD, new ClimbForFun(drive, climber)));
+    autoRoutineMap.put("Climb For Fun (TB)",
+        new AutoRoutine(AutoPosition.TARMAC_B,
+            new ClimbForFun(drive, climber, AutoPosition.TARMAC_B)));
+    autoRoutineMap.put("Climb For Fun (FA*)",
+        new AutoRoutine(AutoPosition.FENDER_A_REVERSED,
+            new ClimbForFun(drive, climber, AutoPosition.FENDER_A_REVERSED)));
+    autoRoutineMap.put("Score With Force (FA*)",
+        new AutoRoutine(AutoPosition.FENDER_A_REVERSED,
+            new ScoreWithForce(drive, AutoPosition.FENDER_A_REVERSED)));
+    autoRoutineMap.put("Score With Force (FB*)",
+        new AutoRoutine(AutoPosition.FENDER_B_REVERSED,
+            new ScoreWithForce(drive, AutoPosition.FENDER_B_REVERSED)));
     autoRoutineMap.put("Taxi (TA)",
         new AutoRoutine(AutoPosition.TARMAC_A, new Taxi(drive, false)));
     autoRoutineMap.put("Taxi (TB)",
@@ -218,7 +229,7 @@ public class RobotContainer {
   }
 
   public static enum AutoPosition {
-    ORIGIN, TARMAC_A, TARMAC_B, TARMAC_C, TARMAC_D, FENDER_A, FENDER_A_BACKWARD, FENDER_B;
+    ORIGIN, TARMAC_A, TARMAC_B, TARMAC_C, TARMAC_D, FENDER_A, FENDER_A_REVERSED, FENDER_B, FENDER_B_REVERSED;
 
     public Pose2d getPose() {
       switch (this) {
@@ -239,12 +250,15 @@ public class RobotContainer {
         case FENDER_A:
           return FieldConstants.fenderA
               .transformBy(GeomUtil.transformFromTranslation(0.5, 0.0));
-        case FENDER_A_BACKWARD:
+        case FENDER_A_REVERSED:
           return FieldConstants.fenderA.transformBy(new Transform2d(
               new Translation2d(0.5, 0.0), Rotation2d.fromDegrees(180.0)));
         case FENDER_B:
           return FieldConstants.fenderB
               .transformBy(GeomUtil.transformFromTranslation(0.5, 0.0));
+        case FENDER_B_REVERSED:
+          return FieldConstants.fenderB.transformBy(new Transform2d(
+              new Translation2d(0.5, 0.0), Rotation2d.fromDegrees(180.0)));
         default:
           return new Pose2d();
       }
