@@ -19,9 +19,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Mode;
-import frc.robot.commands.AutoDriveHard;
 import frc.robot.commands.ClimbForFun;
 import frc.robot.commands.DriveWithJoysticks;
 import frc.robot.commands.FeedForwardCharacterization;
@@ -117,18 +117,18 @@ public class RobotContainer {
     autoRoutineMap.put("Score With Force (FB*)",
         new AutoRoutine(AutoPosition.FENDER_B_REVERSED,
             new ScoreWithForce(drive, AutoPosition.FENDER_B_REVERSED)));
-    autoRoutineMap.put("Taxi (TA)",
-        new AutoRoutine(AutoPosition.TARMAC_A, new Taxi(drive, false)));
-    autoRoutineMap.put("Taxi (TB)",
-        new AutoRoutine(AutoPosition.TARMAC_B, new Taxi(drive, false)));
-    autoRoutineMap.put("Taxi (TC)",
-        new AutoRoutine(AutoPosition.TARMAC_C, new Taxi(drive, false)));
-    autoRoutineMap.put("Taxi (TD)",
-        new AutoRoutine(AutoPosition.TARMAC_D, new Taxi(drive, false)));
-    autoRoutineMap.put("Taxi (FA)",
-        new AutoRoutine(AutoPosition.FENDER_A, new Taxi(drive, true)));
-    autoRoutineMap.put("Taxi (FB)",
-        new AutoRoutine(AutoPosition.FENDER_B, new Taxi(drive, true)));
+    autoRoutineMap.put("Taxi (TA)", new AutoRoutine(AutoPosition.TARMAC_A,
+        new WaitCommand(12.0).andThen(new Taxi(drive, false))));
+    autoRoutineMap.put("Taxi (TB)", new AutoRoutine(AutoPosition.TARMAC_B,
+        new WaitCommand(12.0).andThen(new Taxi(drive, false))));
+    autoRoutineMap.put("Taxi (TC)", new AutoRoutine(AutoPosition.TARMAC_C,
+        new WaitCommand(12.0).andThen(new Taxi(drive, false))));
+    autoRoutineMap.put("Taxi (TD)", new AutoRoutine(AutoPosition.TARMAC_D,
+        new WaitCommand(12.0).andThen(new Taxi(drive, false))));
+    autoRoutineMap.put("Taxi (FA)", new AutoRoutine(AutoPosition.FENDER_A,
+        new WaitCommand(12.0).andThen(new Taxi(drive, true))));
+    autoRoutineMap.put("Taxi (FB)", new AutoRoutine(AutoPosition.FENDER_B,
+        new WaitCommand(12.0).andThen(new Taxi(drive, true))));
     autoRoutineMap.put("Drive Characterization",
         new AutoRoutine(AutoPosition.ORIGIN,
             new FeedForwardCharacterization(drive, true,
