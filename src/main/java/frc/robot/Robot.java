@@ -4,12 +4,13 @@
 
 package frc.robot;
 
+import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
-import org.littletonrobotics.junction.inputs.LoggedNetworkTables;
-import org.littletonrobotics.junction.io.ByteLogReceiver;
-import org.littletonrobotics.junction.io.ByteLogReplay;
-import org.littletonrobotics.junction.io.LogSocketServer;
+import org.littletonrobotics.junction.inputs.LoggedPowerDistribution;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGReader;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -29,7 +30,6 @@ import frc.robot.util.Alert.AlertType;
  */
 public class Robot extends LoggedRobot {
   private RobotContainer robotContainer;
-  private ByteLogReceiver logReceiver;
   private Command autoCommand;
   private double autoStart;
   private boolean autoMessagePrinted;
@@ -40,10 +40,6 @@ public class Robot extends LoggedRobot {
   private final Alert logReceiverQueueAlert =
       new Alert("Logging queue exceeded capacity, data will NOT be logged.",
           AlertType.ERROR);
-  private final Alert logOpenFileAlert = new Alert(
-      "Failed to open log file. Data will NOT be logged", AlertType.ERROR);
-  private final Alert logWriteAlert = new Alert(
-      "Failed write to the log file. Data will NOT be logged", AlertType.ERROR);
 
   public Robot() {
     super(Constants.loopPeriodSecs);
@@ -57,8 +53,6 @@ public class Robot extends LoggedRobot {
   public void robotInit() {
     Logger logger = Logger.getInstance();
     setUseTiming(Constants.getMode() != Mode.REPLAY);
-    LoggedNetworkTables.getInstance()
-        .addTable("/SmartDashboard/TunableNumbers");
     logger.recordMetadata("Robot", Constants.getRobot().toString());
     logger.recordMetadata("TuningMode", Boolean.toString(Constants.tuningMode));
     logger.recordMetadata("RuntimeType", getRuntimeType().toString());
@@ -83,23 +77,23 @@ public class Robot extends LoggedRobot {
       case REAL:
         String folder = Constants.logFolders.get(Constants.getRobot());
         if (folder != null) {
-          logReceiver = new ByteLogReceiver(folder);
-          logger.addDataReceiver(logReceiver);
+          logger.addDataReceiver(new WPILOGWriter(folder));
         } else {
           logNoFileAlert.set(true);
         }
-        logger.addDataReceiver(new LogSocketServer(5800));
+        logger.addDataReceiver(new NT4Publisher());
+        LoggedPowerDistribution.getInstance();
         break;
 
       case SIM:
-        logger.addDataReceiver(new LogSocketServer(5800));
+        logger.addDataReceiver(new NT4Publisher());
         break;
 
       case REPLAY:
-        String path = ByteLogReplay.promptForPath();
-        logger.setReplaySource(new ByteLogReplay(path));
+        String path = LogFileUtil.findReplayLog();
+        logger.setReplaySource(new WPILOGReader(path));
         logger.addDataReceiver(
-            new ByteLogReceiver(ByteLogReceiver.addPathSuffix(path, "_sim")));
+            new WPILOGWriter(LogFileUtil.addPathSuffix(path, "_sim")));
         break;
     }
     logger.start();
@@ -128,12 +122,8 @@ public class Robot extends LoggedRobot {
             .getEntry("/LiveWindow/Ungrouped/Scheduler/Names")
             .getStringArray(new String[] {}));
 
-    // Check logging faults
+    // Check logging fault
     logReceiverQueueAlert.set(Logger.getInstance().getReceiverQueueFault());
-    if (logReceiver != null) {
-      logOpenFileAlert.set(logReceiver.getOpenFault());
-      logWriteAlert.set(logReceiver.getWriteFault());
-    }
 
     // Print auto duration
     if (autoCommand != null) {

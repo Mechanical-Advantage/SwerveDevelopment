@@ -23,7 +23,7 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.util.Alert;
-import frc.robot.util.TunableNumber;
+import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.Alert.AlertType;
 import frc.robot.util.trajectory.CustomHolonomicDriveController;
 import frc.robot.util.trajectory.CustomTrajectoryGenerator;
@@ -41,11 +41,15 @@ public class DriveTrajectory extends CommandBase {
   private final PIDController thetaController =
       new PIDController(0.0, 0.0, 0.0);
 
-  private final TunableNumber driveKp = new TunableNumber("AutoDrive/DriveKp");
-  private final TunableNumber driveKd = new TunableNumber("AutoDrive/DriveKd");
+  private final LoggedTunableNumber driveKp =
+      new LoggedTunableNumber("AutoDrive/DriveKp");
+  private final LoggedTunableNumber driveKd =
+      new LoggedTunableNumber("AutoDrive/DriveKd");
 
-  private final TunableNumber turnKp = new TunableNumber("AutoDrive/TurnKp");
-  private final TunableNumber turnKd = new TunableNumber("AutoDrive/TurnKd");
+  private final LoggedTunableNumber turnKp =
+      new LoggedTunableNumber("AutoDrive/TurnKp");
+  private final LoggedTunableNumber turnKd =
+      new LoggedTunableNumber("AutoDrive/TurnKd");
 
   private final CustomHolonomicDriveController customHolonomicDriveController =
       new CustomHolonomicDriveController(xController, yController,
@@ -86,22 +90,22 @@ public class DriveTrajectory extends CommandBase {
         maxAccelerationMetersPerSec2 = Units.inchesToMeters(200.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
 
-        driveKp.setDefault(2.0);
-        driveKd.setDefault(0.0);
+        driveKp.initDefault(2.0);
+        driveKd.initDefault(0.0);
 
-        turnKp.setDefault(7.0);
-        turnKd.setDefault(0.0);
+        turnKp.initDefault(7.0);
+        turnKd.initDefault(0.0);
         break;
       case ROBOT_SIMBOT:
         maxVelocityMetersPerSec = Units.inchesToMeters(150.0);
         maxAccelerationMetersPerSec2 = Units.inchesToMeters(200.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
 
-        driveKp.setDefault(0.0);
-        driveKd.setDefault(0.0);
+        driveKp.initDefault(0.0);
+        driveKd.initDefault(0.0);
 
-        turnKp.setDefault(0.0);
-        turnKd.setDefault(0.0);
+        turnKp.initDefault(0.0);
+        turnKd.initDefault(0.0);
         break;
       default:
         supportedRobot = false;
@@ -109,11 +113,11 @@ public class DriveTrajectory extends CommandBase {
         maxAccelerationMetersPerSec2 = 0.0;
         maxCentripetalAccelerationMetersPerSec2 = 0.0;
 
-        driveKp.setDefault(0.0);
-        driveKd.setDefault(0.0);
+        driveKp.initDefault(0.0);
+        driveKd.initDefault(0.0);
 
-        turnKp.setDefault(0.0);
-        turnKd.setDefault(0.0);
+        turnKp.initDefault(0.0);
+        turnKd.initDefault(0.0);
         break;
     }
 

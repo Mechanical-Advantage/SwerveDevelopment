@@ -23,21 +23,21 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
-import frc.robot.subsystems.drive.ModuleIO.ModuleIOInputs;
 import frc.robot.util.GeomUtil;
-import frc.robot.util.TunableNumber;
+import frc.robot.util.LoggedTunableNumber;
 
 public class Drive extends SubsystemBase {
   private static final double maxCoastVelocityMetersPerSec = 0.05; // Need to be under this to
                                                                    // switch to coast when disabling
 
   private final GyroIO gyroIO;
-  private final GyroIOInputs gyroInputs = new GyroIOInputs();
+  private final GyroIOInputsAutoLogged gyroInputs =
+      new GyroIOInputsAutoLogged();
   private final ModuleIO[] moduleIOs = new ModuleIO[4]; // FL, FR, BL, BR
-  private final ModuleIOInputs[] moduleInputs =
-      new ModuleIOInputs[] {new ModuleIOInputs(), new ModuleIOInputs(),
-          new ModuleIOInputs(), new ModuleIOInputs()};
+  private final ModuleIOInputsAutoLogged[] moduleInputs =
+      new ModuleIOInputsAutoLogged[] {new ModuleIOInputsAutoLogged(),
+          new ModuleIOInputsAutoLogged(), new ModuleIOInputsAutoLogged(),
+          new ModuleIOInputsAutoLogged()};
 
   private final double maxLinearSpeed;
   private final double maxAngularSpeed;
@@ -45,13 +45,19 @@ public class Drive extends SubsystemBase {
   private final double trackWidthX;
   private final double trackWidthY;
 
-  private final TunableNumber driveKp = new TunableNumber("Drive/DriveKp");
-  private final TunableNumber driveKd = new TunableNumber("Drive/DriveKd");
-  private final TunableNumber driveKs = new TunableNumber("Drive/DriveKs");
-  private final TunableNumber driveKv = new TunableNumber("Drive/DriveKv");
+  private final LoggedTunableNumber driveKp =
+      new LoggedTunableNumber("Drive/DriveKp");
+  private final LoggedTunableNumber driveKd =
+      new LoggedTunableNumber("Drive/DriveKd");
+  private final LoggedTunableNumber driveKs =
+      new LoggedTunableNumber("Drive/DriveKs");
+  private final LoggedTunableNumber driveKv =
+      new LoggedTunableNumber("Drive/DriveKv");
 
-  private final TunableNumber turnKp = new TunableNumber("Drive/TurnKp");
-  private final TunableNumber turnKd = new TunableNumber("Drive/TurnKd");
+  private final LoggedTunableNumber turnKp =
+      new LoggedTunableNumber("Drive/TurnKp");
+  private final LoggedTunableNumber turnKd =
+      new LoggedTunableNumber("Drive/TurnKd");
 
   private final SwerveDriveKinematics kinematics;
   private SimpleMotorFeedforward driveFeedforward;
@@ -84,13 +90,13 @@ public class Drive extends SubsystemBase {
         trackWidthX = Units.inchesToMeters(25.0);
         trackWidthY = Units.inchesToMeters(24.0);
 
-        driveKp.setDefault(0.1);
-        driveKd.setDefault(0.0);
-        driveKs.setDefault(0.12349);
-        driveKv.setDefault(0.13477);
+        driveKp.initDefault(0.1);
+        driveKd.initDefault(0.0);
+        driveKs.initDefault(0.12349);
+        driveKv.initDefault(0.13477);
 
-        turnKp.setDefault(10.0);
-        turnKd.setDefault(0.0);
+        turnKp.initDefault(10.0);
+        turnKd.initDefault(0.0);
         break;
       case ROBOT_SIMBOT:
         maxLinearSpeed = Units.feetToMeters(14.5);
@@ -98,13 +104,13 @@ public class Drive extends SubsystemBase {
         trackWidthX = 0.65;
         trackWidthY = 0.65;
 
-        driveKp.setDefault(0.9);
-        driveKd.setDefault(0.0);
-        driveKs.setDefault(0.116970);
-        driveKv.setDefault(0.133240);
+        driveKp.initDefault(0.9);
+        driveKd.initDefault(0.0);
+        driveKs.initDefault(0.116970);
+        driveKv.initDefault(0.133240);
 
-        turnKp.setDefault(23.0);
-        turnKd.setDefault(0.0);
+        turnKp.initDefault(23.0);
+        turnKd.initDefault(0.0);
         break;
       default:
         maxLinearSpeed = 0.0;
@@ -112,13 +118,13 @@ public class Drive extends SubsystemBase {
         trackWidthX = 0.0;
         trackWidthY = 0.0;
 
-        driveKp.setDefault(0.0);
-        driveKd.setDefault(0.0);
-        driveKs.setDefault(0.0);
-        driveKv.setDefault(0.0);
+        driveKp.initDefault(0.0);
+        driveKd.initDefault(0.0);
+        driveKs.initDefault(0.0);
+        driveKv.initDefault(0.0);
 
-        turnKp.setDefault(0.0);
-        turnKd.setDefault(0.0);
+        turnKp.initDefault(0.0);
+        turnKd.initDefault(0.0);
         break;
     }
 
@@ -148,6 +154,7 @@ public class Drive extends SubsystemBase {
     }
 
     // Update objects based on TunableNumbers
+    Logger.getInstance().recordOutput("TunableNumberTest", turnKp.get());
     if (driveKp.hasChanged() || driveKd.hasChanged() || driveKs.hasChanged()
         || driveKv.hasChanged() || turnKp.hasChanged() || turnKd.hasChanged()) {
       driveFeedforward =

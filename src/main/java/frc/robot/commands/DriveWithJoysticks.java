@@ -24,7 +24,7 @@ public class DriveWithJoysticks extends CommandBase {
   private final Supplier<Double> leftYSupplier;
   private final Supplier<Double> rightYSupplier;
   private final Supplier<Boolean> robotRelativeOverride;
-  private final Supplier<String> modeSupplier;
+  private final Supplier<JoystickMode> modeSupplier;
   private final Supplier<Double> linearSpeedLimitSupplier;
   private final Supplier<Double> angularSpeedLimitSupplier;
   private final Supplier<Double> autoDriveSupplier;
@@ -34,7 +34,8 @@ public class DriveWithJoysticks extends CommandBase {
   /** Creates a new DriveWithJoysticks. */
   public DriveWithJoysticks(Drive drive, Supplier<Double> leftXSupplier,
       Supplier<Double> leftYSupplier, Supplier<Double> rightYSupplier,
-      Supplier<Boolean> robotRelativeOverride, Supplier<String> modeSupplier,
+      Supplier<Boolean> robotRelativeOverride,
+      Supplier<JoystickMode> modeSupplier,
       Supplier<Double> linearSpeedLimitSupplier,
       Supplier<Double> angularSpeedLimitSupplier,
       Supplier<Double> autoDriveSupplier) {
@@ -85,7 +86,7 @@ public class DriveWithJoysticks extends CommandBase {
             .transformBy(
                 GeomUtil.transformFromTranslation(linearMagnitude, 0.0))
             .getTranslation();
-    if (modeSupplier.get() == "Tank") {
+    if (modeSupplier.get() == JoystickMode.Tank) {
       linearVelocity = new Translation2d(linearVelocity.getX(), 0.0);
     }
 
@@ -96,7 +97,8 @@ public class DriveWithJoysticks extends CommandBase {
         rightY * drive.getMaxAngularSpeedRadPerSec());
 
     // Convert from field relative
-    if (!robotRelativeOverride.get() && modeSupplier.get() != "Tank") {
+    if (!robotRelativeOverride.get()
+        && modeSupplier.get() == JoystickMode.Standard) {
       speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds.vxMetersPerSecond,
           speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond,
           drive.getRotation());
@@ -126,5 +128,9 @@ public class DriveWithJoysticks extends CommandBase {
   @Override
   public boolean isFinished() {
     return false;
+  }
+
+  public static enum JoystickMode {
+    Standard, Tank
   }
 }

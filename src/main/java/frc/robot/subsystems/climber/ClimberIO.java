@@ -4,25 +4,14 @@
 
 package frc.robot.subsystems.climber;
 
-import org.littletonrobotics.junction.LogTable;
-import org.littletonrobotics.junction.inputs.LoggableInputs;
+import org.littletonrobotics.junction.AutoLog;
 
 /** Climber subsystem hardware interface. */
 public interface ClimberIO {
-  /** Contains all of the input data received from hardware. */
-  public static class ClimberIOInputs implements LoggableInputs {
+  @AutoLog
+  public static class ClimberIOInputs {
     public double appliedVolts = 0.0;
     public double[] currentAmps = new double[] {};
-
-    public void toLog(LogTable table) {
-      table.put("AppliedVolts", appliedVolts);
-      table.put("CurrentAmps", currentAmps);
-    }
-
-    public void fromLog(LogTable table) {
-      appliedVolts = table.getDouble("AppliedVolts", appliedVolts);
-      currentAmps = table.getDoubleArray("CurrentAmps", currentAmps);
-    }
   }
 
   /** Updates the set of loggable inputs. */

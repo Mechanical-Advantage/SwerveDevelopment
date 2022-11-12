@@ -4,28 +4,15 @@
 
 package frc.robot.subsystems.drive;
 
-import org.littletonrobotics.junction.LogTable;
-import org.littletonrobotics.junction.inputs.LoggableInputs;
+import org.littletonrobotics.junction.AutoLog;
 
 /** Add your docs here. */
 public interface GyroIO {
-  public static class GyroIOInputs implements LoggableInputs {
+  @AutoLog
+  public static class GyroIOInputs {
     public boolean connected = false;
     public double positionRad = 0.0;
     public double velocityRadPerSec = 0.0;
-
-    public void toLog(LogTable table) {
-      table.put("Connected", connected);
-      table.put("PositionRad", positionRad);
-      table.put("VelocityRadPerSec", velocityRadPerSec);
-    }
-
-    public void fromLog(LogTable table) {
-      connected = table.getBoolean("Connected", connected);
-      positionRad = table.getDouble("PositionRad", positionRad);
-      velocityRadPerSec =
-          table.getDouble("VelocityRadPerSec", velocityRadPerSec);
-    }
   }
 
   public default void updateInputs(GyroIOInputs inputs) {}

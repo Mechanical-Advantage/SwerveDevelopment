@@ -4,11 +4,11 @@
 
 package frc.robot.subsystems.drive;
 
-import org.littletonrobotics.junction.LogTable;
-import org.littletonrobotics.junction.inputs.LoggableInputs;
+import org.littletonrobotics.junction.AutoLog;
 
 public interface ModuleIO {
-  public static class ModuleIOInputs implements LoggableInputs {
+  @AutoLog
+  public static class ModuleIOInputs {
     public double drivePositionRad = 0.0;
     public double driveVelocityRadPerSec = 0.0;
     public double driveVelocityFilteredRadPerSec = 0.0;
@@ -22,48 +22,6 @@ public interface ModuleIO {
     public double turnAppliedVolts = 0.0;
     public double[] turnCurrentAmps = new double[] {};
     public double[] turnTempCelcius = new double[] {};
-
-    public void toLog(LogTable table) {
-      table.put("DrivePositionRad", drivePositionRad);
-      table.put("DriveVelocityRadPerSec", driveVelocityRadPerSec);
-      table.put("DriveVelocityFilteredRadPerSec",
-          driveVelocityFilteredRadPerSec);
-      table.put("DriveAppliedVolts", driveAppliedVolts);
-      table.put("DriveCurrentAmps", driveCurrentAmps);
-      table.put("DriveTempCelcius", driveTempCelcius);
-
-      table.put("TurnAbsolutePositionRad", turnAbsolutePositionRad);
-      table.put("TurnPositionRad", turnPositionRad);
-      table.put("TurnVelocityRadPerSec", turnVelocityRadPerSec);
-      table.put("TurnAppliedVolts", turnAppliedVolts);
-      table.put("TurnCurrentAmps", turnCurrentAmps);
-      table.put("TurnTempCelcius", turnTempCelcius);
-    }
-
-    public void fromLog(LogTable table) {
-      drivePositionRad = table.getDouble("DrivePositionRad", drivePositionRad);
-      driveVelocityRadPerSec =
-          table.getDouble("DriveVelocityRadPerSec", driveVelocityRadPerSec);
-      driveVelocityFilteredRadPerSec = table.getDouble(
-          "DriveVelocityFilteredRadPerSec", driveVelocityFilteredRadPerSec);
-      driveAppliedVolts =
-          table.getDouble("DriveAppliedVolts", driveAppliedVolts);
-      driveCurrentAmps =
-          table.getDoubleArray("DriveCurrentAmps", driveCurrentAmps);
-      driveTempCelcius =
-          table.getDoubleArray("DriveTempCelcius", driveTempCelcius);
-
-      turnAbsolutePositionRad =
-          table.getDouble("TurnAbsolutePositionRad", turnAbsolutePositionRad);
-      turnPositionRad = table.getDouble("TurnPositionRad", turnPositionRad);
-      turnVelocityRadPerSec =
-          table.getDouble("TurnVelocityRadPerSec", turnVelocityRadPerSec);
-      turnAppliedVolts = table.getDouble("TurnAppliedVolts", turnAppliedVolts);
-      turnCurrentAmps =
-          table.getDoubleArray("TurnCurrentAmps", turnCurrentAmps);
-      turnTempCelcius =
-          table.getDoubleArray("TurnTempCelcius", turnTempCelcius);
-    }
   }
 
   /** Updates the set of loggable inputs. */

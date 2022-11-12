@@ -4,14 +4,12 @@
 
 package frc.robot;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
@@ -32,6 +30,7 @@ import frc.robot.commands.ScoreWithForce;
 import frc.robot.commands.SixBallAuto;
 import frc.robot.commands.Taxi;
 import frc.robot.commands.ThreeCargoAuto;
+import frc.robot.commands.DriveWithJoysticks.JoystickMode;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
 import frc.robot.subsystems.climber.ClimberIOTalonSRX;
@@ -43,9 +42,7 @@ import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSparkMAX;
 import frc.robot.util.Alert;
 import frc.robot.util.Alert.AlertType;
-import frc.robot.util.DisabledInstantCommand;
 import frc.robot.util.GeomUtil;
-import frc.robot.util.LoggedChoosers;
 import frc.robot.util.SparkMAXBurnManager;
 
 /**
@@ -69,9 +66,14 @@ public class RobotContainer {
   private boolean isFieldRelative = true;
 
   // Choosers
-  private final LoggedChoosers choosers = new LoggedChoosers();
-  private final Map<String, AutoRoutine> autoRoutineMap =
-      new HashMap<String, AutoRoutine>();
+  private final LoggedDashboardChooser<AutoRoutine> autoChooser =
+      new LoggedDashboardChooser<>("Auto Routine");
+  private final LoggedDashboardChooser<JoystickMode> joystickModeChooser =
+      new LoggedDashboardChooser<>("Linear Speed Limit");
+  private final LoggedDashboardChooser<Double> demoLinearSpeedLimitChooser =
+      new LoggedDashboardChooser<>("Linear Speed Limit");
+  private final LoggedDashboardChooser<Double> demoAngularSpeedLimitChooser =
+      new LoggedDashboardChooser<>("Angular Speed Limit");
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -103,44 +105,56 @@ public class RobotContainer {
     climber = climber != null ? climber : new Climber(new ClimberIO() {});
 
     // Set up auto routines
-    autoRoutineMap.put("Do Nothing",
+    autoChooser.addDefaultOption("Do Nothing",
         new AutoRoutine(AutoPosition.ORIGIN, new InstantCommand()));
-    autoRoutineMap.put("Climb For Fun (TB)",
+    autoChooser.addOption("Climb For Fun (TB)",
         new AutoRoutine(AutoPosition.TARMAC_B,
             new ClimbForFun(drive, climber, AutoPosition.TARMAC_B)));
-    autoRoutineMap.put("Climb For Fun (FA*)",
+    autoChooser.addOption("Climb For Fun (FA*)",
         new AutoRoutine(AutoPosition.FENDER_A_REVERSED,
             new ClimbForFun(drive, climber, AutoPosition.FENDER_A_REVERSED)));
-    autoRoutineMap.put("Score With Force (FA*)",
+    autoChooser.addOption("Score With Force (FA*)",
         new AutoRoutine(AutoPosition.FENDER_A_REVERSED,
             new ScoreWithForce(drive, AutoPosition.FENDER_A_REVERSED)));
-    autoRoutineMap.put("Score With Force (FB*)",
+    autoChooser.addOption("Score With Force (FB*)",
         new AutoRoutine(AutoPosition.FENDER_B_REVERSED,
             new ScoreWithForce(drive, AutoPosition.FENDER_B_REVERSED)));
-    autoRoutineMap.put("Taxi (TA)", new AutoRoutine(AutoPosition.TARMAC_A,
+    autoChooser.addOption("Taxi (TA)", new AutoRoutine(AutoPosition.TARMAC_A,
         new WaitCommand(12.0).andThen(new Taxi(drive, false))));
-    autoRoutineMap.put("Taxi (TB)", new AutoRoutine(AutoPosition.TARMAC_B,
+    autoChooser.addOption("Taxi (TB)", new AutoRoutine(AutoPosition.TARMAC_B,
         new WaitCommand(12.0).andThen(new Taxi(drive, false))));
-    autoRoutineMap.put("Taxi (TC)", new AutoRoutine(AutoPosition.TARMAC_C,
+    autoChooser.addOption("Taxi (TC)", new AutoRoutine(AutoPosition.TARMAC_C,
         new WaitCommand(12.0).andThen(new Taxi(drive, false))));
-    autoRoutineMap.put("Taxi (TD)", new AutoRoutine(AutoPosition.TARMAC_D,
+    autoChooser.addOption("Taxi (TD)", new AutoRoutine(AutoPosition.TARMAC_D,
         new WaitCommand(12.0).andThen(new Taxi(drive, false))));
-    autoRoutineMap.put("Taxi (FA)", new AutoRoutine(AutoPosition.FENDER_A,
+    autoChooser.addOption("Taxi (FA)", new AutoRoutine(AutoPosition.FENDER_A,
         new WaitCommand(12.0).andThen(new Taxi(drive, true))));
-    autoRoutineMap.put("Taxi (FB)", new AutoRoutine(AutoPosition.FENDER_B,
+    autoChooser.addOption("Taxi (FB)", new AutoRoutine(AutoPosition.FENDER_B,
         new WaitCommand(12.0).andThen(new Taxi(drive, true))));
-    autoRoutineMap.put("Drive Characterization",
+    autoChooser.addOption("Drive Characterization",
         new AutoRoutine(AutoPosition.ORIGIN,
             new FeedForwardCharacterization(drive, true,
                 new FeedForwardCharacterizationData("drive"),
                 drive::runCharacterizationVolts,
                 drive::getCharacterizationVelocity)));
-    autoRoutineMap.put("Three Cargo",
+    autoChooser.addOption("Three Cargo",
         new AutoRoutine(AutoPosition.TARMAC_D, new ThreeCargoAuto(drive)));
-    autoRoutineMap.put("Five Cargo",
+    autoChooser.addOption("Five Cargo",
         new AutoRoutine(AutoPosition.TARMAC_D, new FiveCargoAuto(drive)));
-    autoRoutineMap.put("Six Cargo",
+    autoChooser.addOption("Six Cargo",
         new AutoRoutine(AutoPosition.TARMAC_D, new SixBallAuto(drive)));
+
+    // Set up choosers
+    joystickModeChooser.addDefaultOption("Standard", JoystickMode.Standard);
+    joystickModeChooser.addOption("Tank", JoystickMode.Tank);
+    demoLinearSpeedLimitChooser.addDefaultOption("--Competition Mode--", 1.0);
+    demoLinearSpeedLimitChooser.addOption("Fast Speed (70%)", 0.7);
+    demoLinearSpeedLimitChooser.addOption("Medium Speed (30%)", 0.3);
+    demoLinearSpeedLimitChooser.addOption("Slow Speed (15%)", 0.15);
+    demoAngularSpeedLimitChooser.addDefaultOption("--Competition Mode--", 1.0);
+    demoAngularSpeedLimitChooser.addOption("Fast Speed (70%)", 0.7);
+    demoAngularSpeedLimitChooser.addOption("Medium Speed (30%)", 0.3);
+    demoAngularSpeedLimitChooser.addOption("Slow Speed (15%)", 0.15);
 
     // Alert if in tuning mode
     if (Constants.tuningMode) {
@@ -161,23 +175,23 @@ public class RobotContainer {
     // Driving controls
     new Trigger(driverController::getStartButton)
         .or(new Trigger(driverController::getBackButton))
-        .whenActive(new DisabledInstantCommand(() -> {
+        .onTrue(new InstantCommand(() -> {
           isFieldRelative = !isFieldRelative;
           SmartDashboard.putBoolean("Field Relative", isFieldRelative);
-        }));
+        }).ignoringDisable(true));
     SmartDashboard.putBoolean("Field Relative", isFieldRelative);
     drive.setDefaultCommand(new DriveWithJoysticks(drive,
         () -> -driverController.getLeftY(), () -> -driverController.getLeftX(),
         () -> -driverController.getRightX(), () -> !isFieldRelative,
-        () -> choosers.getJoystickMode(),
-        () -> choosers.getDemoLinearSpeedLimit(),
-        () -> choosers.getDemoAngularSpeedLimit(),
+        () -> joystickModeChooser.get(),
+        () -> demoLinearSpeedLimitChooser.get(),
+        () -> demoAngularSpeedLimitChooser.get(),
         () -> driverController.getRightTriggerAxis()));
 
     // Reset gyro command
-    Command resetGyroCommand = new DisabledInstantCommand(() -> {
+    Command resetGyroCommand = new InstantCommand(() -> {
       drive.setPose(autoDriveTarget);
-    }, drive);
+    }, drive).ignoringDisable(true);
     Command rumbleCommand = new StartEndCommand(
         () -> driverController.setRumble(RumbleType.kRightRumble, 0.5),
         () -> driverController.setRumble(RumbleType.kRightRumble, 0.0)) {
@@ -188,11 +202,11 @@ public class RobotContainer {
     }.withTimeout(0.2);
     new Trigger(driverController::getLeftBumper)
         .and(new Trigger(driverController::getRightBumper))
-        .whenActive(resetGyroCommand).whenActive(rumbleCommand);
+        .onTrue(resetGyroCommand).onTrue(rumbleCommand);
 
     // Auto drive controls
     // new Trigger(() -> driverController.getLeftTriggerAxis() > 0.5)
-    // .whileActiveOnce(new AutoDriveHard(drive));
+    // .whileTrue(new AutoDriveHard(drive));
 
     // Climber controls
     climber.setDefaultCommand(
@@ -205,17 +219,9 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    String routineString = choosers.getAutoRoutine();
-    if (autoRoutineMap.containsKey(routineString)) {
-      AutoRoutine routine = autoRoutineMap.get(routineString);
-      drive.setPose(routine.position.getPose());
-      return routine.command;
-
-    } else {
-      DriverStation.reportError("Unknown auto routine: '" + routineString + "'",
-          false);
-      return null;
-    }
+    AutoRoutine routine = autoChooser.get();
+    drive.setPose(routine.position.getPose());
+    return routine.command;
   }
 
   private static class AutoRoutine {

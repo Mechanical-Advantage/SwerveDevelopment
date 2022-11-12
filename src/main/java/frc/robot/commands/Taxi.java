@@ -9,14 +9,15 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.util.TunableNumber;
+import frc.robot.util.LoggedTunableNumber;
 
 public class Taxi extends CommandBase {
-  private static TunableNumber longDuration =
-      new TunableNumber("Taxi/LongDurationSecs");
-  private static TunableNumber shortDuration =
-      new TunableNumber("Taxi/ShortDurationSecs");
-  private static TunableNumber speed = new TunableNumber("Taxi/Speed");
+  private static LoggedTunableNumber longDuration =
+      new LoggedTunableNumber("Taxi/LongDurationSecs");
+  private static LoggedTunableNumber shortDuration =
+      new LoggedTunableNumber("Taxi/ShortDurationSecs");
+  private static LoggedTunableNumber speed =
+      new LoggedTunableNumber("Taxi/Speed");
 
   private final Drive drive;
   private final boolean isLong;
@@ -28,9 +29,9 @@ public class Taxi extends CommandBase {
     this.drive = drive;
     this.isLong = isLong;
 
-    longDuration.setDefault(1.25);
-    shortDuration.setDefault(1.0);
-    speed.setDefault(Units.inchesToMeters(80.0));
+    longDuration.initDefault(1.25);
+    shortDuration.initDefault(1.0);
+    speed.initDefault(Units.inchesToMeters(80.0));
   }
 
   // Called when the command is initially scheduled.
