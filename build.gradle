@@ -99,7 +99,7 @@ dependencies {
 
     implementation "gov.nist.math:jama:1.0.3"
 
-    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:dev"
+    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.0.0-beta-1"
 }
 
 // Simulation configuration (e.g. environment variables).
