@@ -1,6 +1,6 @@
 package frc.robot.util.trajectory;
 
-import static edu.wpi.first.wpilibj.util.ErrorMessages.requireNonNullParam;
+import static edu.wpi.first.util.ErrorMessages.requireNonNullParam;
 
 import java.util.Optional;
 

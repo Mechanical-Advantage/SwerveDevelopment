@@ -108,7 +108,7 @@ public class DriveWithJoysticks extends CommandBase {
     // ChassisSpeeds autoDriveSpeeds =
     // AutoDriveSoftWithSpline.calculate(drive.getPose(),
     // autoDriveSupplier.get() * drive.getMaxLinearSpeedMetersPerSec(),
-    // drive.getFieldVelocity());
+    // autoDriveSupplier.get() > 0.08);
     // speeds = new ChassisSpeeds(
     // speeds.vxMetersPerSecond + autoDriveSpeeds.vxMetersPerSecond,
     // speeds.vyMetersPerSecond + autoDriveSpeeds.vyMetersPerSecond,

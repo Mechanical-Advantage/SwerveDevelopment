@@ -2,7 +2,7 @@ import edu.wpi.first.gradlerio.deploy.roborio.RoboRIO
 
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2023.1.1-beta-3"
+    id "edu.wpi.first.GradleRIO" version "2023.1.1-beta-6"
     id "com.peterabeles.gversion" version "1.10"
 }
 
@@ -99,7 +99,7 @@ dependencies {
 
     implementation "gov.nist.math:jama:1.0.3"
 
-    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.0.0-beta-1"
+    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.0.0-beta-2"
 }
 
 // Simulation configuration (e.g. environment variables).

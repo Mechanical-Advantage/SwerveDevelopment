@@ -148,6 +148,9 @@ public class DriveTrajectory extends CommandBase {
     timer.reset();
     timer.start();
 
+    Logger.getInstance().recordOutput("Odometry/Trajectory",
+        customGenerator.getDriveTrajectory());
+
     xController.reset();
     yController.reset();
     thetaController.reset();

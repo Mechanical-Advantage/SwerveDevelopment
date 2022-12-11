@@ -154,7 +154,6 @@ public class Drive extends SubsystemBase {
     }
 
     // Update objects based on TunableNumbers
-    Logger.getInstance().recordOutput("TunableNumberTest", turnKp.get());
     if (driveKp.hasChanged() || driveKd.hasChanged() || driveKs.hasChanged()
         || driveKv.hasChanged() || turnKp.hasChanged() || turnKd.hasChanged()) {
       driveFeedforward =
@@ -224,17 +223,18 @@ public class Drive extends SubsystemBase {
 
             // Log individual setpoints
             Logger.getInstance().recordOutput(
-                "SwerveDriveSetpoints/" + Integer.toString(i),
+                "SwerveSetpointValues/Drive/" + Integer.toString(i),
                 velocityRadPerSec);
             Logger.getInstance().recordOutput(
-                "SwerveTurnSetpoints/" + Integer.toString(i),
+                "SwerveSetpointValues/Turn/" + Integer.toString(i),
                 setpointStatesOptimized[i].angle.getRadians());
           }
 
           // Log all module setpoints
-          logModuleStates("SwerveModuleStates/Setpoints", setpointStates);
-          logModuleStates("SwerveModuleStates/SetpointsOptimized",
-              setpointStatesOptimized);
+          Logger.getInstance().recordOutput("SwerveModuleStates/Setpoints",
+              setpointStates);
+          Logger.getInstance().recordOutput(
+              "SwerveModuleStates/SetpointsOptimized", setpointStatesOptimized);
           break;
 
         case CHARACTERIZATION:
@@ -301,13 +301,11 @@ public class Drive extends SubsystemBase {
         chassisState.vyMetersPerSecond).rotateBy(getRotation());
 
     // Log measured states
-    logModuleStates("SwerveModuleStates/Measured", measuredStates);
+    Logger.getInstance().recordOutput("SwerveModuleStates/Measured",
+        measuredStates);
 
     // Log odometry pose
-    Logger.getInstance().recordOutput("Odometry",
-        new double[] {odometryPose.getX(), odometryPose.getY(),
-            odometryPose.getRotation().getRadians()});
-
+    Logger.getInstance().recordOutput("Odometry/Robot", odometryPose);
 
     // Enable/disable brake mode
     if (DriverStation.isEnabled()) {
@@ -335,16 +333,6 @@ public class Drive extends SubsystemBase {
         }
       }
     }
-  }
-
-  private void logModuleStates(String key, SwerveModuleState[] states) {
-    List<Double> dataArray = new ArrayList<Double>();
-    for (int i = 0; i < 4; i++) {
-      dataArray.add(states[i].angle.getRadians());
-      dataArray.add(states[i].speedMetersPerSecond);
-    }
-    Logger.getInstance().recordOutput(key,
-        dataArray.stream().mapToDouble(Double::doubleValue).toArray());
   }
 
   /**
