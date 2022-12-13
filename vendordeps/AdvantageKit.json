@@ -33,7 +33,7 @@
         "linuxathena",
         "windowsx86-64",
         "linuxx86-64",
-        "osxx86-64"
+        "osxuniversal"
       ]
     }
   ],
