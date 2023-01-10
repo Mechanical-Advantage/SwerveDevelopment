@@ -2,7 +2,7 @@ import edu.wpi.first.gradlerio.deploy.roborio.RoboRIO
 
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2023.1.1-beta-6"
+    id "edu.wpi.first.GradleRIO" version "2023.1.1"
     id "com.peterabeles.gversion" version "1.10"
 }
 
@@ -66,15 +66,6 @@ configurations.all {
     exclude group: "edu.wpi.first.wpilibj"
 }
 
-sourceSets {
-    main {
-        java {
-            srcDirs "src/main/java"
-            srcDirs "build/generated/sources/annotationProcessor/java/main"
-        }
-    }
-}
-
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 4.
 dependencies {
@@ -99,7 +90,7 @@ dependencies {
 
     implementation "gov.nist.math:jama:1.0.3"
 
-    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.0.0-beta-2"
+    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.0.0"
 }
 
 // Simulation configuration (e.g. environment variables).
